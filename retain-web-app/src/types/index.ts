@@ -8,7 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string; // Only for the fake data. 
+  password: string; // only for fake data; backend will store a hashed password
   role: Role;
   createdAt: string; // date the user registered, 'YYYY-MM-DD'
 }
