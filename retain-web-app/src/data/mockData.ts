@@ -9,17 +9,25 @@ function daysAgo(n: number): string {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
+// Returns a full ISO timestamp for `n` days before today, at 6:30 PM.
+function timestampDaysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(18, 30, 0, 0);
+  return d.toISOString();
+}
+
 export const UNCATEGORIZED_ID = 'cat-uncategorized';
 
 export const mockUsers: User[] = [
-  { id: 'u-admin', name: 'Admin', email: 'admin@retain.com', password: 'admin123', role: 'admin', createdAt: daysAgo(120) },
-  { id: 'u-demo', name: 'Demo User', email: 'demo@retain.com', password: 'demo123', role: 'user', createdAt: daysAgo(90) },
-  { id: 'u-jane', name: 'Jane Doe', email: 'jane@retain.com', password: 'jane123', role: 'user', createdAt: daysAgo(5) },
+  { id: 'u-admin', name: 'Admin', email: 'admin@retain.com', password: 'admin123', role: 'admin', createdAt: timestampDaysAgo(120) },
+  { id: 'u-demo', name: 'Demo User', email: 'demo@retain.com', password: 'demo123', role: 'user', createdAt: timestampDaysAgo(90) },
+  { id: 'u-jane', name: 'Jane Doe', email: 'jane@retain.com', password: 'jane123', role: 'user', createdAt: timestampDaysAgo(5) },
 ];
 
 export const mockCategories: Category[] = [
   { id: UNCATEGORIZED_ID, name: 'Uncategorized' },
-  { id: 'cat-food', name: 'Food & Dining' },
+  { id: 'cat-food', name: 'Food & drink' },
   { id: 'cat-transport', name: 'Transport' },
   { id: 'cat-housing', name: 'Housing' },
   { id: 'cat-utilities', name: 'Utilities' },
@@ -27,6 +35,7 @@ export const mockCategories: Category[] = [
   { id: 'cat-entertainment', name: 'Entertainment' },
   { id: 'cat-shopping', name: 'Shopping' },
   { id: 'cat-education', name: 'Education' },
+  { id: 'cat-subscriptions', name: 'Subscriptions' },
 ];
 
 // Small helper so each sample expense fits on one line.
@@ -41,7 +50,8 @@ function makeExpense(
   notes?: string,
 ): Expense {
   const date = daysAgo(daysBack);
-  return { id, userId, title, amount, categoryId, date, paymentMethod, notes, createdAt: date };
+  const createdAt = timestampDaysAgo(daysBack);
+  return { id, userId, title, amount, categoryId, date, paymentMethod, notes, createdAt, updatedAt: createdAt };
 }
 
 export const mockExpenses: Expense[] = [
@@ -70,7 +80,7 @@ export const mockExpenses: Expense[] = [
   makeExpense('e23', 'u-demo', 'Dentist check-up', 60, 'cat-health', 57, 'Bank Transfer'),
   makeExpense('e24', 'u-demo', 'Monthly rent', 450, 'cat-housing', 61, 'Bank Transfer'),
   makeExpense('e25', 'u-demo', 'Street market', 9.75, UNCATEGORIZED_ID, 66, 'Cash'),
-  makeExpense('e26', 'u-demo', 'Streaming subscription', 12.99, 'cat-entertainment', 72, 'Card'),
+  makeExpense('e26', 'u-demo', 'Streaming subscription', 12.99, 'cat-subscriptions', 72, 'Card'),
   makeExpense('e27', 'u-demo', 'Groceries', 66, 'cat-food', 80, 'Card'),
   // Jane registered 5 days ago, so her expenses are all recent.
   makeExpense('e28', 'u-jane', 'Lunch', 9.5, 'cat-food', 4, 'Mobile Money'),
@@ -78,6 +88,18 @@ export const mockExpenses: Expense[] = [
   makeExpense('e30', 'u-jane', 'Notebook and pens', 6.8, 'cat-education', 1, 'Cash'),
 ];
 
+// Builds a budget for the month `monthsBack` months before this one,
+// set on the 1st of that month.
+function makeBudget(userId: string, monthsBack: number, amount: number): Budget {
+  const now = new Date();
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1, 9, 0);
+  const month = `${firstOfMonth.getFullYear()}-${String(firstOfMonth.getMonth() + 1).padStart(2, '0')}`;
+  return { userId, month, amount, updatedAt: firstOfMonth.toISOString() };
+}
+
 export const mockBudgets: Budget[] = [
-  { userId: 'u-demo', month: daysAgo(0).slice(0, 7), amount: 900 },
+  makeBudget('u-demo', 0, 900),
+  makeBudget('u-demo', 1, 800),
+  makeBudget('u-demo', 2, 900),
+  makeBudget('u-jane', 0, 200),
 ];

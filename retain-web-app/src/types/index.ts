@@ -10,7 +10,7 @@ export interface User {
   email: string;
   password: string; // only for fake data; backend will store a hashed password
   role: Role;
-  createdAt: string; // date the user registered, 'YYYY-MM-DD'
+  createdAt: string; // when the user registered, ISO timestamp
 }
 
 export interface Category {
@@ -24,14 +24,16 @@ export interface Expense {
   title: string;
   amount: number;
   categoryId: string;
-  date: string; // 'YYYY-MM-DD'
+  date: string; // day the money was spent, 'YYYY-MM-DD'
   paymentMethod: PaymentMethod;
   notes?: string; // optional
-  createdAt: string; // date the expense was added
+  createdAt: string; // when the expense was added, ISO timestamp
+  updatedAt: string; // when it was last edited, ISO timestamp
 }
 
 export interface Budget {
   userId: string;
   month: string; // 'YYYY-MM'
   amount: number;
+  updatedAt: string; // when the budget was last set, ISO timestamp
 }
