@@ -13,8 +13,10 @@ function toPublic({ id, name, email, role, createdAt }: User): PublicUser {
   return { id, name, email, role, createdAt };
 }
 
-function saveSession(user: PublicUser): void {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+// remember me: localStorage survives closing the browser, sessionStorage doesn't
+function saveSession(user: PublicUser, remember: boolean): void {
+  signOut();
+  (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, JSON.stringify(user));
 }
 
 // admin dashboard only
@@ -25,16 +27,16 @@ export async function getUsers(): Promise<PublicUser[]> {
 
 // whoever is logged in, or null
 export function getCurrentUser(): PublicUser | null {
-  const saved = localStorage.getItem(SESSION_KEY);
+  const saved = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY);
   return saved ? (JSON.parse(saved) as PublicUser) : null;
 }
 
-export async function signIn(email: string, password: string): Promise<PublicUser> {
+export async function signIn(email: string, password: string, remember: boolean): Promise<PublicUser> {
   await delay();
   const user = load().find((u) => u.email === email.trim().toLowerCase() && u.password === password);
   if (!user) throw new Error('Incorrect email or password.');
 
-  saveSession(toPublic(user));
+  saveSession(toPublic(user), remember);
   return toPublic(user);
 }
 
@@ -47,10 +49,11 @@ export async function signUp(name: string, email: string, password: string): Pro
 
   const user: User = { id: newId('u'), name: name.trim(), email: cleanEmail, password, role: 'user', createdAt: now() };
   saveList(KEY, [...users, user]);
-  saveSession(toPublic(user));
+  saveSession(toPublic(user), true);
   return toPublic(user);
 }
 
 export function signOut(): void {
   localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
 }

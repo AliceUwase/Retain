@@ -5,22 +5,22 @@ import type { PublicUser } from '../types';
 interface AuthContextValue {
   user: PublicUser | null;
   signUp: (name: string, email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, remember: boolean) => Promise<void>;
   signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // read the saved session so a refresh doesn't log a useer out
+  // read the saved session so a refresh doesn't log a user out
   const [user, setUser] = useState(authService.getCurrentUser);
 
   async function signUp(name: string, email: string, password: string) {
     setUser(await authService.signUp(name, email, password));
   }
 
-  async function signIn(email: string, password: string) {
-    setUser(await authService.signIn(email, password));
+  async function signIn(email: string, password: string, remember: boolean) {
+    setUser(await authService.signIn(email, password, remember));
   }
 
   function signOut() {
