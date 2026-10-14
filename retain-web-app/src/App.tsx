@@ -1,36 +1,39 @@
-import { Box, Button, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import AdminRoute from './components/AdminRoute'
+import ProtectedRoute from './components/ProtectedRoute'
+import AdminCategories from './pages/AdminCategories'
+import AdminDashboard from './pages/AdminDashboard'
+import Budget from './pages/Budget'
+import Dashboard from './pages/Dashboard'
+import ExpenseDetail from './pages/ExpenseDetail'
+import Expenses from './pages/Expenses'
+import Login from './pages/Login'
+import NotFound from './pages/NotFound'
+import Register from './pages/Register'
 
-// Temporary preview to check the theme. 
 function App() {
   return (
-    <Box sx={{ p: 4, maxWidth: 640 }}>
-      <Typography variant="h1" gutterBottom>
-        Spending tracker
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Theme preview: colours, font, buttons, chips and a progress bar.
-      </Typography>
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h2" gutterBottom>
-            October budget
-          </Typography>
-          <LinearProgress variant="determinate" value={74} sx={{ my: 2 }} />
-          <Stack direction="row" spacing={1}>
-            <Chip label="Within budget" color="success" />
-            <Chip label="Approaching budget" color="warning" />
-            <Chip label="Over budget" color="error" />
-            
-          </Stack>
-        </CardContent>
-      </Card>
+      {/* logged-in users only */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/expenses/:id" element={<ExpenseDetail />} />
+        <Route path="/budget" element={<Budget />} />
 
-      <Stack direction="row" spacing={1}>
-        <Button variant="contained">Add expense</Button>
-        <Button variant="outlined">Cancel</Button>
-      </Stack>
-    </Box>
+        {/* admins only */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   )
 }
 
