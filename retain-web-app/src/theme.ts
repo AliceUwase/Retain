@@ -1,7 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 
 const green = '#1F7A56'; // buttons, active nav item 
-const darkGreen = '#1C4A3B'; // budget banner on the dashboard
+const darkGreen = '#174B38'; // budget banner, login panel (matches the illustration)
 const lightGreen = '#E4F0E9'; // selected nav background, green chips
 const border = '#E6E6DF'; // card and table borders
 
