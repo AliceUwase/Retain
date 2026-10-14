@@ -8,10 +8,13 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string; // only for fake data; backend will store a hashed password
+  password: string; // plain text for now, the backend will hash it
   role: Role;
-  createdAt: string; // when the user registered, ISO timestamp
+  createdAt: string; // when they signed up (ISO)
 }
+
+// a user minus the password, what we keep after login
+export type PublicUser = Omit<User, 'password'>;
 
 export interface Category {
   id: string;
@@ -24,19 +27,19 @@ export interface Expense {
   title: string;
   amount: number;
   categoryId: string;
-  date: string; // day the money was spent, 'YYYY-MM-DD'
+  date: string; // day it was spent, 'YYYY-MM-DD'
   paymentMethod: PaymentMethod;
-  notes?: string; // optional
-  createdAt: string; // when the expense was added, ISO timestamp
-  updatedAt: string; // when it was last edited, ISO timestamp
+  notes?: string;
+  createdAt: string; // when it was added (ISO)
+  updatedAt: string; // last edit (ISO)
 }
 
-// What the expense form sends; the service adds id and timestamps.
+// what the form sends, the service fills in id and timestamps
 export type ExpenseInput = Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface Budget {
   userId: string;
   month: string; // 'YYYY-MM'
   amount: number;
-  updatedAt: string; // when the budget was last set, ISO timestamp
+  updatedAt: string; // last time it was set (ISO)
 }
