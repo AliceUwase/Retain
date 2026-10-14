@@ -8,19 +8,19 @@ function load(): Budget[] {
   return loadList(KEY, mockBudgets);
 }
 
-// All of a user's budgets, for the "few months in perspective" cards.
+// for the month-by-month comparison
 export async function getBudgets(userId: string): Promise<Budget[]> {
   await delay();
   return load().filter((b) => b.userId === userId);
 }
 
-// `month` is 'YYYY-MM'. Undefined if no budget was set for that month.
+// month is 'YYYY-MM', undefined if none was set
 export async function getBudget(userId: string, month: string): Promise<Budget | undefined> {
   await delay();
   return load().find((b) => b.userId === userId && b.month === month);
 }
 
-// Creates the month's budget, or replaces it if one exists.
+// adds the month's budget or replaces the old one
 export async function setBudget(userId: string, month: string, amount: number): Promise<Budget> {
   await delay();
   const budget: Budget = { userId, month, amount, updatedAt: now() };

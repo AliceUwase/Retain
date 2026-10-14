@@ -2,7 +2,7 @@
 
 const PREFIX = 'retain:';
 
-// Returns the saved list, or saves and returns a copy of `seed` the first time.
+// first run: nothing saved yet, so start from a copy of the mock data
 export function loadList<T>(key: string, seed: T[]): T[] {
   const saved = localStorage.getItem(PREFIX + key);
   if (saved === null) {

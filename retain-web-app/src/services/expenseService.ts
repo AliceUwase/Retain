@@ -2,7 +2,7 @@ import { mockExpenses } from '../data/mockData';
 import type { Expense, ExpenseInput } from '../types';
 import { delay, loadList, newId, now, saveList } from './storage';
 
-const KEY = 'expenses'; // categoryService uses the same key
+const KEY = 'expenses'; // categoryService writes here too
 
 function load(): Expense[] {
   return loadList(KEY, mockExpenses);
@@ -13,7 +13,7 @@ export async function getExpenses(userId: string): Promise<Expense[]> {
   return load().filter((e) => e.userId === userId);
 }
 
-// For the admin dashboard.
+// admin dashboard only
 export async function getAllExpenses(): Promise<Expense[]> {
   await delay();
   return load();

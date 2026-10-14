@@ -27,7 +27,7 @@ export async function updateCategory(id: string, name: string): Promise<Category
   return updated;
 }
 
-// Moves the category's expenses to "Uncategorized", then deletes it.
+// its expenses move to Uncategorized so none are left without a category
 export async function deleteCategory(id: string): Promise<void> {
   await delay();
   if (id === UNCATEGORIZED_ID) throw new Error('"Uncategorized" can\'t be deleted.');

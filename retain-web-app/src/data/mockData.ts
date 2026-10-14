@@ -1,6 +1,6 @@
 import type { Budget, Category, Expense, PaymentMethod, User } from '../types';
 
-// Returns the date `n` days before today as 'YYYY-MM-DD'.
+// e.g. daysAgo(2) gives the date two days back, 'YYYY-MM-DD'
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -9,7 +9,7 @@ function daysAgo(n: number): string {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-// Returns a full ISO timestamp for `n` days before today, at 6:30 PM.
+// same idea, but a full timestamp at 6:30 PM
 function timestampDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -38,7 +38,7 @@ export const mockCategories: Category[] = [
   { id: 'cat-subscriptions', name: 'Subscriptions' },
 ];
 
-// Small helper so each sample expense fits on one line.
+// keeps each sample expense on one line
 function makeExpense(
   id: string,
   userId: string,
@@ -82,14 +82,13 @@ export const mockExpenses: Expense[] = [
   makeExpense('e25', 'u-demo', 'Street market', 9.75, UNCATEGORIZED_ID, 66, 'Cash'),
   makeExpense('e26', 'u-demo', 'Streaming subscription', 12.99, 'cat-subscriptions', 72, 'Card'),
   makeExpense('e27', 'u-demo', 'Groceries', 66, 'cat-food', 80, 'Card'),
-  // Jane registered 5 days ago, so her expenses are all recent.
+  // Jane only joined 5 days ago
   makeExpense('e28', 'u-jane', 'Lunch', 9.5, 'cat-food', 4, 'Mobile Money'),
   makeExpense('e29', 'u-jane', 'Bus fare', 3, 'cat-transport', 2, 'Cash'),
   makeExpense('e30', 'u-jane', 'Notebook and pens', 6.8, 'cat-education', 1, 'Cash'),
 ];
 
-// Builds a budget for the month `monthsBack` months before this one,
-// set on the 1st of that month.
+// budget for `monthsBack` months ago, set on the 1st
 function makeBudget(userId: string, monthsBack: number, amount: number): Budget {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1, 9, 0);
