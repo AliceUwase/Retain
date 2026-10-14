@@ -31,6 +31,9 @@ export interface Expense {
   updatedAt: string; // when it was last edited, ISO timestamp
 }
 
+// What the expense form sends; the service adds id and timestamps.
+export type ExpenseInput = Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>;
+
 export interface Budget {
   userId: string;
   month: string; // 'YYYY-MM'
