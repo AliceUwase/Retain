@@ -70,7 +70,7 @@ export default function Login() {
           <FormControlLabel
             control={<Checkbox size="small" checked={remember} onChange={(e) => setRemember(e.target.checked)} />}
             label="Remember me"
-            slotProps={{ typography: { fontSize: '0.875rem' } }}
+            slotProps={{ typography: { variant: 'body2' } }}
           />
 
           <Button type="submit" variant="contained" size="large" fullWidth loading={loading}>

@@ -119,7 +119,7 @@ export default function Register() {
                   .
                 </>
               }
-              slotProps={{ typography: { fontSize: '0.875rem' } }}
+              slotProps={{ typography: { variant: 'body2' } }}
             />
             {errors.agreed && <FormHelperText error>{errors.agreed}</FormHelperText>}
           </Box>
