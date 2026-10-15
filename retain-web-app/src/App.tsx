@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AdminRoute from './components/AdminRoute'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import UserRoute from './components/UserRoute'
 import AdminCategories from './pages/AdminCategories'
 import AdminDashboard from './pages/AdminDashboard'
 import Budget from './pages/Budget'
@@ -22,10 +23,13 @@ function App() {
       {/* logged-in users only, inside the sidebar layout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/expenses/:id" element={<ExpenseDetail />} />
-          <Route path="/budget" element={<Budget />} />
+          {/* normal users only */}
+          <Route element={<UserRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/expenses/:id" element={<ExpenseDetail />} />
+            <Route path="/budget" element={<Budget />} />
+          </Route>
 
           {/* admins only */}
           <Route element={<AdminRoute />}>

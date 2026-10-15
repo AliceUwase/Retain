@@ -1,5 +1,5 @@
 import { Avatar, Box, ButtonBase, List, ListItemButton, Menu, MenuItem, Typography } from '@mui/material';
-import { ChartPie, ChevronsUpDown, LayoutDashboard, LogOut, ReceiptText, ShieldCheck, Tags, type LucideIcon } from 'lucide-react';
+import { ChartPie, ChevronsUpDown, LayoutDashboard, LogOut, ReceiptText, Tags, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +17,7 @@ const personalLinks: NavItem[] = [
 ];
 
 const adminLinks: NavItem[] = [
-  { to: '/admin', label: 'Admin overview', icon: ShieldCheck },
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/categories', label: 'Categories', icon: Tags },
 ];
 
@@ -70,18 +70,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {/* logo image goes here once it's in src/assets */}
       <Typography sx={{ px: 1, mb: 4, fontSize: '1.625rem', fontWeight: 500 }}>Retain</Typography>
 
-      <NavLinks items={personalLinks} onNavigate={onNavigate} />
-
-      {user.role === 'admin' && (
-        <>
-          <Typography
-            sx={{ px: 2, mt: 3, mb: 1, fontSize: '0.75rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}
-          >
-            Admin
-          </Typography>
-          <NavLinks items={adminLinks} onNavigate={onNavigate} />
-        </>
-      )}
+      <NavLinks items={user.role === 'admin' ? adminLinks : personalLinks} onNavigate={onNavigate} />
 
       {/* account box, pushed to the bottom */}
       <ButtonBase
