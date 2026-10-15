@@ -2,7 +2,7 @@ import { Box, FormLabel, TextField, type TextFieldProps } from '@mui/material';
 
 type FormFieldProps = TextFieldProps & { id: string; label: string };
 
-// label above the input, like the Figma (MUI's default label floats inside)
+// label above the input
 export default function FormField({ id, label, ...props }: FormFieldProps) {
   return (
     <Box>
