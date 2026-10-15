@@ -3,6 +3,8 @@ import { ChartPie, ChevronsUpDown, LayoutDashboard, LogOut, ReceiptText, Tags, t
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resetFilters } from '../store/filtersSlice';
+import { useAppDispatch } from '../store/store';
 
 interface NavItem {
   to: string;
@@ -61,9 +63,16 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
 // onNavigate closes the drawer on phones after a link is tapped
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user, signOut } = useAuth();
+  const dispatch = useAppDispatch();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   if (!user) return null;
+
+  // the next person to log in shouldn't inherit these filters
+  function handleSignOut() {
+    dispatch(resetFilters());
+    signOut();
+  }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2.5, bgcolor: '#EFEEE7' }}>
@@ -98,7 +107,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <MenuItem onClick={signOut} sx={{ gap: 1.5 }}>
+        <MenuItem onClick={handleSignOut} sx={{ gap: 1.5 }}>
           <LogOut size={16} />
           Sign out
         </MenuItem>

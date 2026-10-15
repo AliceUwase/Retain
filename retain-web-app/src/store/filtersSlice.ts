@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import dayjs from 'dayjs';
 import type { Expense, PaymentMethod } from '../types';
 
 export type SortBy = 'date' | 'amount';
@@ -17,12 +18,13 @@ export interface FiltersState {
 
 export const PAGE_SIZE = 10;
 
+// starts on the current month
 const initialState: FiltersState = {
   search: '',
   category: '',
   paymentMethod: '',
-  startDate: '',
-  endDate: '',
+  startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+  endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
   sortBy: 'date',
   sortOrder: 'desc', // newest first
   page: 1,
@@ -64,6 +66,11 @@ const filtersSlice = createSlice({
     setPage(state, action: PayloadAction<number>) {
       state.page = action.payload;
     },
+    // "Clear filters": removes every filter, month included, but keeps the sort
+    clearFilters(state) {
+      return { ...initialState, startDate: '', endDate: '', sortBy: state.sortBy, sortOrder: state.sortOrder };
+    },
+    // back to how it started (this month, newest first), used on sign out
     resetFilters() {
       return initialState;
     },
@@ -79,6 +86,7 @@ export const {
   setSortBy,
   setSortOrder,
   setPage,
+  clearFilters,
   resetFilters,
 } = filtersSlice.actions;
 
