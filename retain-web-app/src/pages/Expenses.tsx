@@ -1,5 +1,7 @@
-import { Box, Card, Chip, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, Chip, Snackbar, Stack, Typography } from '@mui/material';
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
@@ -17,6 +19,8 @@ export default function Expenses() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [message, setMessage] = useState(''); // success message at the bottom
 
   useEffect(() => {
     if (!user) return;
@@ -30,12 +34,25 @@ export default function Expenses() {
   const filtered = applyFilters(expenses, filters);
   const total = filtered.reduce((sum, e) => sum + e.amount, 0);
 
+  function handleSaved(expense: Expense) {
+    setExpenses((current) => [...current, expense]);
+    setFormOpen(false);
+    setMessage(`"${expense.title}" was added.`);
+  }
+
   return (
     <Box>
-      <Typography variant="h1">Expenses</Typography>
-      <Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>
-        The everyday expense details from a glance.
-      </Typography>
+      <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ mb: 3, gap: 2, alignItems: { sm: 'flex-start' } }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h1">Expenses</Typography>
+          <Typography color="text.secondary" sx={{ mt: 1 }}>
+            The everyday expense details from a glance.
+          </Typography>
+        </Box>
+        <Button variant="contained" size="large" startIcon={<Plus size={18} />} onClick={() => setFormOpen(true)}>
+          Add expense
+        </Button>
+      </Stack>
 
       <FilterBar categories={categories} />
 
@@ -59,6 +76,16 @@ export default function Expenses() {
 
         <Pagination totalItems={filtered.length} />
       </Card>
+
+      {formOpen && <ExpenseForm categories={categories} onClose={() => setFormOpen(false)} onSaved={handleSaved} />}
+
+      <Snackbar
+        open={message !== ''}
+        message={message}
+        autoHideDuration={4000}
+        onClose={() => setMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }
