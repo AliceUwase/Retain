@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Checkbox, FormControlLabel, Link, Stack, Typography } from '@mui/material';
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { Link as RouterLink, Navigate, useLocation, type Location } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import FormField from '../components/FormField';
@@ -19,7 +19,7 @@ export default function Login() {
   const from = (location.state as { from?: Location } | null)?.from?.pathname ?? '/dashboard';
   if (user) return <Navigate to={from} replace />;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim() || !password) {
       setError('Please enter your email and password.');

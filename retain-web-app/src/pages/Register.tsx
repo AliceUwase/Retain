@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Checkbox, FormControlLabel, FormHelperText, Link, Stack, Typography } from '@mui/material';
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import FormField from '../components/FormField';
@@ -32,7 +32,7 @@ export default function Register() {
     return found;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const found = validate();
     setErrors(found);
