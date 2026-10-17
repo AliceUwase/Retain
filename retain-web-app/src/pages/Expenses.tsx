@@ -1,5 +1,5 @@
 import { Box, Button, Card, Chip, Snackbar, Stack, Typography } from '@mui/material';
-import { Plus } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
@@ -11,6 +11,7 @@ import { getExpenses } from '../services/expenseService';
 import { applyFilters, getPage } from '../store/filtersSlice';
 import { useAppSelector } from '../store/store';
 import type { Category, Expense } from '../types';
+import { downloadExpensesCsv } from '../utils/csv';
 import { formatMoney } from '../utils/format';
 
 export default function Expenses() {
@@ -49,9 +50,22 @@ export default function Expenses() {
             The everyday expense details from a glance.
           </Typography>
         </Box>
-        <Button variant="contained" size="large" startIcon={<Plus size={18} />} onClick={() => setFormOpen(true)}>
-          Add expense
-        </Button>
+        <Stack direction="row" spacing={1.5}>
+          {/* exports what's currently filtered, not just this page */}
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<Download size={18} />}
+            disabled={filtered.length === 0}
+            onClick={() => downloadExpensesCsv(filtered, categories)}
+            sx={{ borderColor: 'divider', color: 'text.primary', bgcolor: 'background.paper' }}
+          >
+            Export CSV
+          </Button>
+          <Button variant="contained" size="large" startIcon={<Plus size={18} />} onClick={() => setFormOpen(true)}>
+            Add expense
+          </Button>
+        </Stack>
       </Stack>
 
       <FilterBar categories={categories} />
