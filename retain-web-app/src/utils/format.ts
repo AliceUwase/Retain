@@ -17,6 +17,16 @@ export function formatLongDate(date: string): string {
   return dayjs(date).format('MMMM D, YYYY');
 }
 
+// '2026-09' -> "September 2026"
+export function formatMonth(month: string): string {
+  return dayjs(`${month}-01`).format('MMMM YYYY');
+}
+
+// 74 -> "74%", 92.24 -> "92.2%"
+export function formatPercent(percent: number): string {
+  return `${Number(percent.toFixed(1))}%`;
+}
+
 // ISO timestamp -> "Sep 28, 2026 · 8:42 PM"
 export function formatDateTime(timestamp: string): string {
   return dayjs(timestamp).format('MMM D, YYYY · h:mm A');
