@@ -74,7 +74,7 @@ export default function Dashboard() {
 
   const banner = {
     none: { title: `No budget for ${monthName} yet`, text: 'Set one to see how your spending compares.' },
-    within: { title: 'Nicely within your budget', text: `${formatPercent(100 - percent)} of your budget is still unspent.` },
+    within: { title: 'Still within your budget', text: `${formatPercent(100 - percent)} of your budget is still unspent.` },
     approaching: { title: 'Getting close to your budget', text: `Only ${formatPercent(100 - percent)} of your budget is left.` },
     over: { title: 'Over budget', text: `You're ${formatMoney(-remaining)} over your ${monthName} budget.` },
   }[status ?? 'none'];
@@ -97,7 +97,7 @@ export default function Dashboard() {
     <Box>
       <Stack direction={{ xs: 'column', md: 'row' }} sx={{ mb: 3, gap: 2, alignItems: { md: 'flex-start' } }}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h1">Overall Spending Overview</Typography>
+          <Typography variant="h1">Spending Overview</Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
             Your {monthName} expense recap.
           </Typography>
