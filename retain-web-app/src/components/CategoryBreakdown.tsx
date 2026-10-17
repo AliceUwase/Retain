@@ -1,4 +1,5 @@
 import { Box, Card, LinearProgress, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { Category, Expense } from '../types';
 import { formatMoney } from '../utils/format';
 
@@ -39,7 +40,12 @@ export default function CategoryBreakdown({ expenses, categories }: { expenses: 
               <LinearProgress
                 variant="determinate"
                 value={(row.total / grandTotal) * 100}
-                sx={{ mt: 0.75, height: 6, '& .MuiLinearProgress-bar': { bgcolor: i === 0 ? 'primary.main' : '#6FA283' } }}
+                sx={{
+                  mt: 0.75,
+                  height: 6,
+                  // biggest category in the full colour, the rest lighter
+                  '& .MuiLinearProgress-bar': { bgcolor: (theme) => (i === 0 ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.55)) },
+                }}
               />
             </Box>
           ))}

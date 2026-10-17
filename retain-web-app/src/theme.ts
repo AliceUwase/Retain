@@ -1,18 +1,19 @@
 import { createTheme } from '@mui/material/styles';
 
-const green = '#1F7A56'; // buttons, active nav item 
-const darkGreen = '#174B38'; // budget banner, login panel (matches the illustration)
-const lightGreen = '#E4F0E9'; // selected nav background, green chips
+const rust = '#A3492A'; // burnt sienna: buttons, active nav item, links
+const darkRust = '#4E2416'; // deep brown: budget banner, login panel
+const lightRust = '#F7E6DC'; // pale peach: selected nav background, chips
 const border = '#E6E6DF'; // card and table borders
 
 const theme = createTheme({
   palette: {
-    primary: { main: green, dark: darkGreen, light: lightGreen, contrastText: '#FFFFFF' },
-    success: { main: green, light: lightGreen }, // Within budget
-    warning: { main: '#9C6A1E', light: '#FBEFD9' }, // Approaching budget
-    error: { main: '#B5473A', light: '#FBE5E1' }, // Over budget
+    primary: { main: rust, dark: darkRust, light: lightRust, contrastText: '#FFFFFF' },
+    // budget statuses keep traffic-light colours so they don't blend with the rust
+    success: { main: '#276B45', light: '#E3F1E8' }, // Within budget
+    warning: { main: '#8F5B0E', light: '#FBF0DC' }, // Approaching budget
+    error: { main: '#C0362C', light: '#FCE8E6' }, // Over budget
     background: { default: '#F5F5F0', paper: '#FFFFFF' }, // off-white page, white cards
-    text: { primary: '#1F2A24', secondary: '#6B726D' },
+    text: { primary: '#2B2420', secondary: '#776B63' }, // warm dark brown and grey
     divider: border,
   },
 
@@ -41,7 +42,7 @@ const theme = createTheme({
       styleOverrides: {
         root: { borderColor: border },
         // Small grey capital headers
-        head: { backgroundColor: '#F7F7F3', color: '#6B726D', fontSize: '0.75rem', textTransform: 'uppercase' },
+        head: { backgroundColor: '#F7F7F3', color: '#776B63', fontSize: '0.75rem', textTransform: 'uppercase' },
       },
     },
     MuiLinearProgress: {

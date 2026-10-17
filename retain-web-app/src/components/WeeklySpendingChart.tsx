@@ -1,4 +1,5 @@
 import { Card, Typography, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import dayjs from 'dayjs';
 import type { Expense } from '../types';
@@ -45,11 +46,13 @@ export default function WeeklySpendingChart({ expenses, month }: { expenses: Exp
           {
             scaleType: 'band',
             data: weeks.map((w) => w.label),
-            // the busiest week stands out in dark green
+            // the busiest week stands out in the full colour, the rest are lighter
             colorMap: {
               type: 'ordinal',
               values: weeks.map((w) => w.label),
-              colors: weeks.map((w) => (w.total === biggest && biggest > 0 ? theme.palette.primary.main : '#6FA283')),
+              colors: weeks.map((w) =>
+                w.total === biggest && biggest > 0 ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.55),
+              ),
             },
           },
         ]}
