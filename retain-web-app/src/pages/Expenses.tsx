@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import FilterBar from '../components/FilterBar';
+import LoadError from '../components/LoadError';
 import Pagination from '../components/Pagination';
 import { useAuth } from '../context/AuthContext';
 import { getCategories } from '../services/categoryService';
@@ -22,15 +23,25 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [message, setMessage] = useState(''); // success message at the bottom
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getCategories(), getExpenses(user.id)]).then(([categoryList, expenseList]) => {
-      setCategories(categoryList);
-      setExpenses(expenseList);
-      setLoading(false);
-    });
-  }, [user]);
+    Promise.all([getCategories(), getExpenses(user.id)])
+      .then(([categoryList, expenseList]) => {
+        setCategories(categoryList);
+        setExpenses(expenseList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [user, attempt]);
+
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
 
   const filtered = applyFilters(expenses, filters);
   const total = filtered.reduce((sum, e) => sum + e.amount, 0);
@@ -82,7 +93,9 @@ export default function Expenses() {
           </Typography>
         </Stack>
 
-        {loading ? (
+        {loadError ? (
+          <LoadError onRetry={retry} />
+        ) : loading ? (
           <Typography sx={{ px: 2.5, py: 6, textAlign: 'center', color: 'text.secondary' }}>Loading expenses…</Typography>
         ) : (
           <ExpenseList expenses={getPage(filtered, filters.page)} categories={categories} />

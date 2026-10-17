@@ -3,6 +3,7 @@ import { CalendarDays, Coins, ReceiptText, TrendingDown, TrendingUp, Users, type
 import { useEffect, useState } from 'react';
 import CategoryBreakdown from '../components/CategoryBreakdown';
 import CategoryIcon from '../components/CategoryIcon';
+import LoadError from '../components/LoadError';
 import StatCard from '../components/StatCard';
 import { getUsers } from '../services/authService';
 import { getCategories } from '../services/categoryService';
@@ -48,16 +49,27 @@ export default function AdminDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
-    Promise.all([getUsers(), getAllExpenses(), getCategories()]).then(([userList, expenseList, categoryList]) => {
-      setUsers(userList);
-      setExpenses(expenseList);
-      setCategories(categoryList);
-      setLoading(false);
-    });
-  }, []);
+    Promise.all([getUsers(), getAllExpenses(), getCategories()])
+      .then(([userList, expenseList, categoryList]) => {
+        setUsers(userList);
+        setExpenses(expenseList);
+        setCategories(categoryList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [attempt]);
 
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
+
+  if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading admin overview…</Typography>;
 
   const month = currentMonth();

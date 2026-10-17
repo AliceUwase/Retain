@@ -23,6 +23,7 @@ import { useEffect, useState, type SubmitEvent } from 'react';
 import CategoryIcon from '../components/CategoryIcon';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
+import LoadError from '../components/LoadError';
 import { UNCATEGORIZED_ID } from '../data/mockData';
 import { addCategory, deleteCategory, getCategories, updateCategory } from '../services/categoryService';
 import { getAllExpenses } from '../services/expenseService';
@@ -57,7 +58,12 @@ function RenameDialog({
     setError(problem);
     if (problem) return;
     setSaving(true);
-    await onSave(name.trim());
+    try {
+      await onSave(name.trim());
+    } catch {
+      setError("Couldn't rename the category. Please try again.");
+      setSaving(false);
+    }
   }
 
   return (
@@ -91,14 +97,24 @@ export default function AdminCategories() {
   const [removing, setRemoving] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
-    Promise.all([getCategories(), getAllExpenses()]).then(([categoryList, expenseList]) => {
-      setCategories(categoryList);
-      setExpenses(expenseList);
-      setLoading(false);
-    });
-  }, []);
+    Promise.all([getCategories(), getAllExpenses()])
+      .then(([categoryList, expenseList]) => {
+        setCategories(categoryList);
+        setExpenses(expenseList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [attempt]);
+
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
 
   // how many expenses (all users) use each category
   const countFor = (id: string) => expenses.filter((e) => e.categoryId === id).length;
@@ -110,11 +126,16 @@ export default function AdminCategories() {
     if (problem) return;
 
     setAdding(true);
-    const added = await addCategory(newName.trim());
-    setCategories((current) => [...current, added]);
-    setNewName('');
-    setAdding(false);
-    setMessage(`"${added.name}" was added.`);
+    try {
+      const added = await addCategory(newName.trim());
+      setCategories((current) => [...current, added]);
+      setNewName('');
+      setMessage(`"${added.name}" was added.`);
+    } catch {
+      setAddError("Couldn't add the category. Please try again.");
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function handleRename(name: string) {
@@ -128,15 +149,21 @@ export default function AdminCategories() {
   async function handleDelete() {
     if (!removing) return;
     setDeleting(true);
-    await deleteCategory(removing.id);
-    // mirror what the service did: its expenses now point to Uncategorized
-    setExpenses((current) => current.map((e) => (e.categoryId === removing.id ? { ...e, categoryId: UNCATEGORIZED_ID } : e)));
-    setCategories((current) => current.filter((c) => c.id !== removing.id));
-    setMessage(`"${removing.name}" was deleted.`);
-    setRemoving(null);
-    setDeleting(false);
+    try {
+      await deleteCategory(removing.id);
+      // mirror what the service did: its expenses now point to Uncategorized
+      setExpenses((current) => current.map((e) => (e.categoryId === removing.id ? { ...e, categoryId: UNCATEGORIZED_ID } : e)));
+      setCategories((current) => current.filter((c) => c.id !== removing.id));
+      setMessage(`"${removing.name}" was deleted.`);
+    } catch {
+      setMessage(`Couldn't delete "${removing.name}". Please try again.`);
+    } finally {
+      setRemoving(null);
+      setDeleting(false);
+    }
   }
 
+  if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading categories…</Typography>;
 
   const removingCount = removing ? countFor(removing.id) : 0;

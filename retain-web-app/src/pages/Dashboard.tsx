@@ -7,6 +7,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import CategoryBreakdown from '../components/CategoryBreakdown';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
+import LoadError from '../components/LoadError';
 import StatCard from '../components/StatCard';
 import WeeklySpendingChart from '../components/WeeklySpendingChart';
 import { useAuth } from '../context/AuthContext';
@@ -33,17 +34,28 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getExpenses(user.id), getCategories(), getBudgets(user.id)]).then(([expenseList, categoryList, budgetList]) => {
-      setExpenses(expenseList);
-      setCategories(categoryList);
-      setBudgets(budgetList);
-      setLoading(false);
-    });
-  }, [user]);
+    Promise.all([getExpenses(user.id), getCategories(), getBudgets(user.id)])
+      .then(([expenseList, categoryList, budgetList]) => {
+        setExpenses(expenseList);
+        setCategories(categoryList);
+        setBudgets(budgetList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [user, attempt]);
 
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
+
+  if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading your overview…</Typography>;
 
   const monthName = dayjs(`${month}-01`).format('MMMM');

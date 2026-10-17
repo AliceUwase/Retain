@@ -6,6 +6,7 @@ import { useEffect, useState, type SubmitEvent } from 'react';
 import BudgetCard from '../components/BudgetCard';
 import BudgetStatusChip from '../components/BudgetStatusChip';
 import FormField from '../components/FormField';
+import LoadError from '../components/LoadError';
 import { useAuth } from '../context/AuthContext';
 import { getBudgets, setBudget } from '../services/budgetService';
 import { getExpenses } from '../services/expenseService';
@@ -45,8 +46,13 @@ function BudgetForm({
     }
     setError('');
     setSaving(true);
-    await onSave(value);
-    setSaving(false);
+    try {
+      await onSave(value);
+    } catch {
+      setError("Couldn't save the budget. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const buttons = (
@@ -100,16 +106,27 @@ export default function Budget() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getBudgets(user.id), getExpenses(user.id)]).then(([budgetList, expenseList]) => {
-      setBudgets(budgetList);
-      setExpenses(expenseList);
-      setLoading(false);
-    });
-  }, [user]);
+    Promise.all([getBudgets(user.id), getExpenses(user.id)])
+      .then(([budgetList, expenseList]) => {
+        setBudgets(budgetList);
+        setExpenses(expenseList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [user, attempt]);
 
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
+
+  if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading budget…</Typography>;
 
   const budgetFor = (m: string) => budgets.find((b) => b.month === m);

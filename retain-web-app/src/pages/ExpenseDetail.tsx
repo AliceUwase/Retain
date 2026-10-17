@@ -7,6 +7,7 @@ import CategoryIcon from '../components/CategoryIcon';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
+import LoadError from '../components/LoadError';
 import { useAuth } from '../context/AuthContext';
 import { getCategories } from '../services/categoryService';
 import { deleteExpense, getExpenses } from '../services/expenseService';
@@ -52,16 +53,26 @@ export default function ExpenseDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   // all of the user's expenses, so we also get the "Also in" list
   useEffect(() => {
     if (!user) return;
-    Promise.all([getExpenses(user.id), getCategories()]).then(([expenseList, categoryList]) => {
-      setExpenses(expenseList);
-      setCategories(categoryList);
-      setLoading(false);
-    });
-  }, [user]);
+    Promise.all([getExpenses(user.id), getCategories()])
+      .then(([expenseList, categoryList]) => {
+        setExpenses(expenseList);
+        setCategories(categoryList);
+        setLoading(false);
+      })
+      .catch(() => setLoadError(true));
+  }, [user, attempt]);
+
+  function retry() {
+    setLoadError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }
 
   const backLink = (
     <Link component={RouterLink} to="/expenses" underline="hover" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, mb: 3, fontWeight: 500 }}>
@@ -69,6 +80,7 @@ export default function ExpenseDetail() {
     </Link>
   );
 
+  if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading expense…</Typography>;
 
   // also covers someone else's expense id, since we only loaded this user's
@@ -103,8 +115,14 @@ export default function ExpenseDetail() {
 
   async function handleDelete() {
     setDeleting(true);
-    await deleteExpense(expense!.id);
-    navigate('/expenses');
+    try {
+      await deleteExpense(expense!.id);
+      navigate('/expenses');
+    } catch {
+      setDeleting(false);
+      setConfirmDelete(false);
+      setMessage("Couldn't delete the expense. Please try again.");
+    }
   }
 
   return (
