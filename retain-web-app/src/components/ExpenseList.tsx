@@ -1,4 +1,4 @@
-import { Box, ButtonBase, Chip, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Box, ButtonBase, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Category, Expense } from '../types';
@@ -8,10 +8,6 @@ import CategoryIcon from './CategoryIcon';
 interface ExpenseListProps {
   expenses: Expense[];
   categories: Category[];
-}
-
-function CategoryChip({ name }: { name: string }) {
-  return <Chip size="small" label={name} sx={{ bgcolor: '#EFEEE7', color: 'text.secondary', fontWeight: 500 }} />;
 }
 
 // table on large screens, cards on phones; each expense opens its detail page
@@ -49,9 +45,7 @@ export default function ExpenseList({ expenses, categories }: ExpenseListProps) 
                   <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{expense.title}</Typography>
                 </Stack>
               </TableCell>
-              <TableCell>
-                <CategoryChip name={categoryName(expense.categoryId)} />
-              </TableCell>
+              <TableCell sx={{ color: 'text.secondary' }}>{categoryName(expense.categoryId)}</TableCell>
               <TableCell sx={{ color: 'text.secondary' }}>{expense.paymentMethod}</TableCell>
               <TableCell sx={{ color: 'text.secondary' }}>{formatShortDate(expense.date)}</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600 }}>

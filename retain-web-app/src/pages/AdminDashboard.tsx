@@ -1,4 +1,4 @@
-import { Avatar, Box, Card, Chip, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Avatar, Box, Card, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { CalendarDays, Coins, ReceiptText, TrendingDown, TrendingUp, Users, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import CategoryBreakdown from '../components/CategoryBreakdown';
@@ -33,7 +33,9 @@ function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: Lu
             <Typography sx={{ width: 16, fontSize: '0.8125rem', color: 'text.secondary' }}>{i + 1}</Typography>
             <CategoryIcon categoryId={row.id} size={28} />
             <Typography sx={{ flex: 1, fontSize: '0.875rem' }}>{row.name}</Typography>
-            <Chip size="small" label={`${row.count} ${row.count === 1 ? 'expense' : 'expenses'}`} />
+            <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
+              {row.count} {row.count === 1 ? 'expense' : 'expenses'}
+            </Typography>
           </Stack>
         ))}
       </Stack>
