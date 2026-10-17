@@ -11,8 +11,14 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
 }
 
-// "Where it went": spending per category, biggest first
-export default function CategoryBreakdown({ expenses, categories }: { expenses: Expense[]; categories: Category[] }) {
+interface CategoryBreakdownProps {
+  expenses: Expense[];
+  categories: Category[];
+  title?: string;
+}
+
+// spending per category, biggest first
+export default function CategoryBreakdown({ expenses, categories, title = 'Where it went' }: CategoryBreakdownProps) {
   const totals = new Map<string, number>();
   for (const e of expenses) totals.set(e.categoryId, (totals.get(e.categoryId) ?? 0) + e.amount);
 
@@ -25,10 +31,10 @@ export default function CategoryBreakdown({ expenses, categories }: { expenses: 
 
   return (
     <Card sx={{ p: 3 }}>
-      <Typography variant="h2">Where it went</Typography>
+      <Typography variant="h2">{title}</Typography>
 
       {rows.length === 0 ? (
-        <Typography sx={{ mt: 2, fontSize: '0.875rem', color: 'text.secondary' }}>No spending recorded this month.</Typography>
+        <Typography sx={{ mt: 2, fontSize: '0.875rem', color: 'text.secondary' }}>No spending recorded yet.</Typography>
       ) : (
         <Stack spacing={2} sx={{ mt: 2.5 }}>
           {shown.map((row, i) => (

@@ -12,6 +12,11 @@ export function formatShortDate(date: string): string {
   return dayjs(date).format('MMM D');
 }
 
+// date or ISO timestamp -> "Sep 28, 2026"
+export function formatDate(date: string): string {
+  return dayjs(date).format('MMM D, YYYY');
+}
+
 // '2026-09-28' -> "September 28, 2026"
 export function formatLongDate(date: string): string {
   return dayjs(date).format('MMMM D, YYYY');
@@ -25,6 +30,16 @@ export function formatMonth(month: string): string {
 // 74 -> "74%", 92.24 -> "92.2%"
 export function formatPercent(percent: number): string {
   return `${Number(percent.toFixed(1))}%`;
+}
+
+// "Alice Maiden" -> "AM"
+export function initials(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 // ISO timestamp -> "Sep 28, 2026 · 8:42 PM"

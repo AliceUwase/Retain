@@ -5,6 +5,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { resetFilters } from '../store/filtersSlice';
 import { useAppDispatch } from '../store/store';
+import { initials } from '../utils/format';
 
 interface NavItem {
   to: string;
@@ -22,16 +23,6 @@ const adminLinks: NavItem[] = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/categories', label: 'Categories', icon: Tags },
 ];
-
-// "Alice Maiden" -> "AM"
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   return (
