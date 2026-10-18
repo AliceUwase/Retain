@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { Category } from '../models/Category';
 import { Expense } from '../models/Expense';
-import type { CreateExpenseInput, UpdateExpenseInput } from '../schemas/expenseSchemas';
+import type { CreateExpenseInput, ExpenseQuery, UpdateExpenseInput } from '../schemas/expenseSchemas';
 import { HttpError } from '../utils/HttpError';
 
 // Every query below includes `userId: req.user.id`. Ownership is part of the search itself,
@@ -13,10 +14,54 @@ async function assertCategoryExists(categoryId: string) {
   if (!(await Category.exists({ _id: categoryId }))) throw new HttpError(400, "That category doesn't exist.");
 }
 
-// GET /api/expenses: newest first (step 8 adds search, filters and pages)
+// a search for "a+b" should find the text "a+b": without escaping, + and other symbols would act as regex rules
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// GET /api/expenses: one page of the user's filtered, sorted expenses, plus totals for the whole filtered list
 export async function listExpenses(req: Request, res: Response) {
-  const expenses = await Expense.find({ userId: req.user!.id }).sort({ date: -1, createdAt: -1 });
-  res.json(expenses);
+  const q = res.locals.query as ExpenseQuery;
+
+  // the aggregate below doesn't convert text to ids by itself the way find() does, so the ids are converted here
+  const filter: Record<string, unknown> = { userId: new Types.ObjectId(req.user!.id) };
+  if (q.search) {
+    const pattern = new RegExp(escapeRegex(q.search), 'i'); // 'i' ignores upper and lower case
+    filter.$or = [{ title: pattern }, { notes: pattern }];
+  }
+  if (q.category) filter.categoryId = new Types.ObjectId(q.category);
+  if (q.paymentMethod) filter.paymentMethod = q.paymentMethod;
+  if (q.startDate || q.endDate) {
+    // 'YYYY-MM-DD' text sorts in date order, so $gte / $lte (at least / at most) work on it directly
+    filter.date = { ...(q.startDate && { $gte: q.startDate }), ...(q.endDate && { $lte: q.endDate }) };
+  }
+
+  const direction = q.sortOrder === 'asc' ? 1 : -1;
+  // the second key settles ties: same amount → newest first, same day → the one added later first
+  const sort: Record<string, 1 | -1> =
+    q.sortBy === 'amount' ? { amount: direction, date: -1 } : { date: direction, createdAt: direction };
+
+  // both queries run at the same time instead of one after the other
+  const [items, [totals]] = await Promise.all([
+    Expense.find(filter)
+      .sort(sort)
+      .skip((q.page - 1) * q.limit) // skip the earlier pages
+      .limit(q.limit),
+    Expense.aggregate<{ count: number; amount: number }>([
+      { $match: filter },
+      { $group: { _id: null, count: { $sum: 1 }, amount: { $sum: '$amount' } } },
+    ]),
+  ]);
+
+  const total = totals?.count ?? 0; // no matches means no group at all
+  res.json({
+    items,
+    total,
+    totalAmount: Math.round((totals?.amount ?? 0) * 100) / 100, // rounds away float noise like 0.30000000000000004
+    page: q.page,
+    limit: q.limit,
+    totalPages: Math.max(1, Math.ceil(total / q.limit)),
+  });
 }
 
 // GET /api/expenses/:id
