@@ -3,6 +3,7 @@ import { isDBConnected } from './config/db';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import authRoutes from './routes/authRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import expenseRoutes from './routes/expenseRoutes';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
