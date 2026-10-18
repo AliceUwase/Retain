@@ -20,6 +20,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // MongoDB's code for "a unique index refused this", e.g. two sign-ups with one email at the same moment
+  if (typeof err === 'object' && err !== null && 'code' in err && err.code === 11000) {
+    res.status(409).json({ error: 'That already exists.' });
+    return;
+  }
+
   // anything else is unexpected; the details go to the server log, and in production the client only gets a generic message
   console.error(err);
   res.status(500).json({ error: env.nodeEnv === 'production' ? 'Something went wrong.' : String(err) });
