@@ -1,5 +1,5 @@
 // a missing required setting stops the server at startup, instead of failing later on the first request
-function required(name: string): string {
+export function required(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Missing environment variable ${name} (set it in .env locally, or in Render's Environment settings)`);
