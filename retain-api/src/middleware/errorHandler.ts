@@ -20,7 +20,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
-  // anything else is a bug: log it, but don't leak details to the client
+  // anything else is unexpected; the details go to the server log, and in production the client only gets a generic message
   console.error(err);
   res.status(500).json({ error: env.nodeEnv === 'production' ? 'Something went wrong.' : String(err) });
 }

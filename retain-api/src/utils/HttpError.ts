@@ -1,4 +1,4 @@
-// throw new HttpError(404, 'Expense not found.') and the error handler sends it as JSON
+// an error that carries its HTTP status code, so the error handler knows what to send back
 export class HttpError extends Error {
   status: number;
 
