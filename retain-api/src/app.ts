@@ -2,6 +2,7 @@ import express from 'express';
 import { isDBConnected } from './config/db';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import authRoutes from './routes/authRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
