@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { env } from '../config/env';
 import { HttpError } from '../utils/HttpError';
 
@@ -17,6 +18,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   // express.json() throws this when the body isn't valid JSON
   if (err instanceof SyntaxError && 'body' in err) {
     res.status(400).json({ error: "Request body isn't valid JSON." });
+    return;
+  }
+
+  // an id that isn't a valid MongoDB id (like /api/categories/abc) can't match anything
+  if (err instanceof mongoose.Error.CastError) {
+    res.status(404).json({ error: 'Not found.' });
     return;
   }
 
