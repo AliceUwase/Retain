@@ -8,3 +8,8 @@ export function isRealDate(value: string): boolean {
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
+
+// true for a 'YYYY-MM' with a month from 01 to 12
+export function isRealMonth(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
