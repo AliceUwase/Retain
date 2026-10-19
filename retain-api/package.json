@@ -10,7 +10,7 @@
     "seed": "tsx --env-file=.env src/seed/seed.ts"
   },
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "keywords": [],
   "author": "",
