@@ -19,6 +19,16 @@ export type PublicUser = Omit<User, 'password'>;
 export interface Category {
   id: string;
   name: string;
+  isDefault?: boolean; // true only for "Uncategorized"; optional until the mock data is removed
+}
+
+// GET /api/admin/categories: a category with how many expenses (all users) use it
+export interface CategoryUsage {
+  categoryId: string;
+  name: string;
+  isDefault: boolean;
+  expenseCount: number;
+  total: number;
 }
 
 export interface Expense {

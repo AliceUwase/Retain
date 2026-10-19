@@ -41,7 +41,7 @@ export default function ExpenseList({ expenses, categories }: ExpenseListProps) 
             <TableRow key={expense.id} hover onClick={() => navigate(`/expenses/${expense.id}`)} sx={{ cursor: 'pointer' }}>
               <TableCell>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <CategoryIcon categoryId={expense.categoryId} />
+                  <CategoryIcon name={categoryName(expense.categoryId)} />
                   <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{expense.title}</Typography>
                 </Stack>
               </TableCell>
@@ -67,7 +67,7 @@ export default function ExpenseList({ expenses, categories }: ExpenseListProps) 
             onClick={() => navigate(`/expenses/${expense.id}`)}
             sx={{ width: '100%', px: 2, py: 1.5, gap: 1.5, justifyContent: 'flex-start', textAlign: 'left', borderTop: 1, borderColor: 'divider' }}
           >
-            <CategoryIcon categoryId={expense.categoryId} />
+            <CategoryIcon name={categoryName(expense.categoryId)} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography noWrap sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
                 {expense.title}

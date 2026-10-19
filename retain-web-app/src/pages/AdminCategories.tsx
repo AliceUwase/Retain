@@ -24,10 +24,8 @@ import CategoryIcon from '../components/CategoryIcon';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
 import LoadError from '../components/LoadError';
-import { UNCATEGORIZED_ID } from '../data/mockData';
-import { addCategory, deleteCategory, getCategories, updateCategory } from '../services/categoryService';
-import { getAllExpenses } from '../services/expenseService';
-import type { Category, Expense } from '../types';
+import { addCategory, deleteCategory, getCategoryUsage, updateCategory } from '../services/categoryService';
+import type { Category } from '../types';
 
 // returns an error message, or '' if the name is fine
 function checkName(name: string, categories: Category[], ignoreId?: string): string {
@@ -60,8 +58,8 @@ function RenameDialog({
     setSaving(true);
     try {
       await onSave(name.trim());
-    } catch {
-      setError("Couldn't rename the category. Please try again.");
+    } catch (err) {
+      setError((err as Error).message); // the API's reason, e.g. the name was taken in the meantime
       setSaving(false);
     }
   }
@@ -88,7 +86,7 @@ function RenameDialog({
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({}); // category id → how many expenses use it
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState('');
@@ -101,10 +99,11 @@ export default function AdminCategories() {
   const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
-    Promise.all([getCategories(), getAllExpenses()])
-      .then(([categoryList, expenseList]) => {
-        setCategories(categoryList);
-        setExpenses(expenseList);
+    // one request gives every category with its expense count, instead of loading every expense
+    getCategoryUsage()
+      .then((usage) => {
+        setCategories(usage.map((u) => ({ id: u.categoryId, name: u.name, isDefault: u.isDefault })));
+        setCounts(Object.fromEntries(usage.map((u) => [u.categoryId, u.expenseCount])));
         setLoading(false);
       })
       .catch(() => setLoadError(true));
@@ -117,7 +116,7 @@ export default function AdminCategories() {
   }
 
   // how many expenses (all users) use each category
-  const countFor = (id: string) => expenses.filter((e) => e.categoryId === id).length;
+  const countFor = (id: string) => counts[id] ?? 0;
 
   async function handleAdd(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -131,8 +130,8 @@ export default function AdminCategories() {
       setCategories((current) => [...current, added]);
       setNewName('');
       setMessage(`"${added.name}" was added.`);
-    } catch {
-      setAddError("Couldn't add the category. Please try again.");
+    } catch (err) {
+      setAddError((err as Error).message);
     } finally {
       setAdding(false);
     }
@@ -150,13 +149,18 @@ export default function AdminCategories() {
     if (!removing) return;
     setDeleting(true);
     try {
-      await deleteCategory(removing.id);
-      // mirror what the service did: its expenses now point to Uncategorized
-      setExpenses((current) => current.map((e) => (e.categoryId === removing.id ? { ...e, categoryId: UNCATEGORIZED_ID } : e)));
+      const { movedExpenses } = await deleteCategory(removing.id);
+      // mirror what the API did: the moved expenses now count for Uncategorized
+      const fallback = categories.find((c) => c.isDefault);
+      if (fallback) setCounts((current) => ({ ...current, [fallback.id]: (current[fallback.id] ?? 0) + movedExpenses }));
       setCategories((current) => current.filter((c) => c.id !== removing.id));
-      setMessage(`"${removing.name}" was deleted.`);
-    } catch {
-      setMessage(`Couldn't delete "${removing.name}". Please try again.`);
+      setMessage(
+        movedExpenses === 0
+          ? `"${removing.name}" was deleted.`
+          : `"${removing.name}" was deleted. ${movedExpenses} ${movedExpenses === 1 ? 'expense' : 'expenses'} moved to "${fallback?.name ?? 'Uncategorized'}".`,
+      );
+    } catch (err) {
+      setMessage((err as Error).message);
     } finally {
       setRemoving(null);
       setDeleting(false);
@@ -210,12 +214,12 @@ export default function AdminCategories() {
           </TableHead>
           <TableBody>
             {categories.map((category) => {
-              const isDefault = category.id === UNCATEGORIZED_ID;
+              const isDefault = category.isDefault === true;
               return (
                 <TableRow key={category.id}>
                   <TableCell>
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                      <CategoryIcon categoryId={category.id} size={32} />
+                      <CategoryIcon name={category.name} size={32} />
                       <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{category.name}</Typography>
                       {isDefault && <Chip size="small" label="Default" sx={{ bgcolor: 'primary.light', color: 'primary.main' }} />}
                     </Stack>

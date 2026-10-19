@@ -154,7 +154,7 @@ export default function ExpenseDetail() {
       <Stack spacing={3} sx={{ maxWidth: 680 }}>
         <Card sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <CategoryIcon categoryId={expense.categoryId} size={52} />
+            <CategoryIcon name={categoryName} size={52} />
             <Typography variant="h2" sx={{ fontSize: '1.5rem' }}>
               {expense.title}
             </Typography>
@@ -171,7 +171,7 @@ export default function ExpenseDetail() {
 
           <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
             <DetailItem label="Date" icon={<Calendar size={18} />} value={formatLongDate(expense.date)} />
-            <DetailItem label="Category" icon={<CategoryIcon categoryId={expense.categoryId} size={24} />} value={categoryName} />
+            <DetailItem label="Category" icon={<CategoryIcon name={categoryName} size={24} />} value={categoryName} />
             <DetailItem label="Payment method" icon={<PaymentIcon size={18} />} value={expense.paymentMethod} />
           </Box>
 

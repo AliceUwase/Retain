@@ -11,22 +11,23 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import { Box, type SvgIconProps } from '@mui/material';
 import type { ComponentType } from 'react';
 
-// solid icons, so categories stand out from the outlined UI icons
+// solid icons, so categories stand out from the outlined UI icons; matched by name,
+// because the ids are made by the database and differ between local and live data
 const icons: Record<string, ComponentType<SvgIconProps>> = {
-  'cat-food': RestaurantIcon,
-  'cat-transport': DirectionsBusIcon,
-  'cat-housing': HomeIcon,
-  'cat-utilities': BoltIcon,
-  'cat-health': FavoriteIcon,
-  'cat-entertainment': MovieIcon,
-  'cat-shopping': ShoppingBagIcon,
-  'cat-education': MenuBookIcon,
-  'cat-subscriptions': AutorenewIcon,
+  'food & drink': RestaurantIcon,
+  transport: DirectionsBusIcon,
+  housing: HomeIcon,
+  utilities: BoltIcon,
+  health: FavoriteIcon,
+  entertainment: MovieIcon,
+  shopping: ShoppingBagIcon,
+  education: MenuBookIcon,
+  subscriptions: AutorenewIcon,
 };
 
-// `size` is the space it takes up; the icon fills most of it. New or unknown categories get a tag.
-export default function CategoryIcon({ categoryId, size = 36 }: { categoryId: string; size?: number }) {
-  const Icon = icons[categoryId] ?? LocalOfferIcon;
+// `size` is the space it takes up; the icon fills most of it. New, renamed or unknown categories get a tag.
+export default function CategoryIcon({ name, size = 36 }: { name: string; size?: number }) {
+  const Icon = icons[name.toLowerCase()] ?? LocalOfferIcon;
 
   return (
     <Box sx={{ width: size, height: size, flexShrink: 0, display: 'grid', placeItems: 'center', color: 'text.secondary' }}>

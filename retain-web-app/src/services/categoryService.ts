@@ -1,41 +1,25 @@
-import { mockCategories, mockExpenses, UNCATEGORIZED_ID } from '../data/mockData';
-import type { Category, Expense } from '../types';
-import { delay, loadList, newId, now, saveList } from './storage';
+import type { Category, CategoryUsage } from '../types';
+import { api } from './apiClient';
 
-const KEY = 'categories';
-
-function load(): Category[] {
-  return loadList(KEY, mockCategories);
+export function getCategories(): Promise<Category[]> {
+  return api<Category[]>('/api/categories');
 }
 
-export async function getCategories(): Promise<Category[]> {
-  await delay();
-  return load();
+// the changes below are admin only; the API answers 403 for anyone else
+
+export function addCategory(name: string): Promise<Category> {
+  return api<Category>('/api/categories', { method: 'POST', body: { name } });
 }
 
-export async function addCategory(name: string): Promise<Category> {
-  await delay();
-  const category: Category = { id: newId('cat'), name };
-  saveList(KEY, [...load(), category]);
-  return category;
+export function updateCategory(id: string, name: string): Promise<Category> {
+  return api<Category>(`/api/categories/${id}`, { method: 'PATCH', body: { name } });
 }
 
-export async function updateCategory(id: string, name: string): Promise<Category> {
-  await delay();
-  const updated: Category = { id, name };
-  saveList(KEY, load().map((c) => (c.id === id ? updated : c)));
-  return updated;
+// the API moves the category's expenses to Uncategorized and says how many moved
+export function deleteCategory(id: string): Promise<{ movedExpenses: number }> {
+  return api<{ movedExpenses: number }>(`/api/categories/${id}`, { method: 'DELETE' });
 }
 
-// its expenses move to Uncategorized so none are left without a category
-export async function deleteCategory(id: string): Promise<void> {
-  await delay();
-  if (id === UNCATEGORIZED_ID) throw new Error('"Uncategorized" can\'t be deleted.');
-
-  const expenses = loadList<Expense>('expenses', mockExpenses);
-  saveList(
-    'expenses',
-    expenses.map((e) => (e.categoryId === id ? { ...e, categoryId: UNCATEGORIZED_ID, updatedAt: now() } : e)),
-  );
-  saveList(KEY, load().filter((c) => c.id !== id));
+export function getCategoryUsage(): Promise<CategoryUsage[]> {
+  return api<CategoryUsage[]>('/api/admin/categories');
 }

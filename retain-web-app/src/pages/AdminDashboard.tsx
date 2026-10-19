@@ -32,7 +32,7 @@ function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: Lu
         {rows.map((row, i) => (
           <Stack key={row.id} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Typography sx={{ width: 16, fontSize: '0.8125rem', color: 'text.secondary' }}>{i + 1}</Typography>
-            <CategoryIcon categoryId={row.id} size={28} />
+            <CategoryIcon name={row.name} size={28} />
             <Typography sx={{ flex: 1, fontSize: '0.875rem' }}>{row.name}</Typography>
             <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
               {row.count} {row.count === 1 ? 'expense' : 'expenses'}
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
                   <TableRow key={e.id}>
                     <TableCell>
                       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                        <CategoryIcon categoryId={e.categoryId} size={32} />
+                        <CategoryIcon name={categoryName(e.categoryId)} size={32} />
                         <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{e.title}</Typography>
                       </Stack>
                     </TableCell>
