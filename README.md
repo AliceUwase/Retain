@@ -110,36 +110,27 @@ Authorization: Bearer <token>
 
 **Errors** always look like `{ "error": "message" }`, with the status code: `400` invalid input, `401` not logged in or token expired, `403` wrong role, `404` not found (including other users' data), `409` already exists, `429` too many attempts.
 
-### Endpoints
+Users can only see and change their own expenses and budgets. The admin account manages the app and can't use the personal endpoints.
+
+### Auth
 
 | Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
-| GET | `/health` | Public | API and database status |
 | POST | `/auth/register` | Public | Create a user account, returns `{ user, token }` |
 | POST | `/auth/login` | Public | Body `{ email, password, remember }`, returns `{ user, token }` |
 | GET | `/auth/me` | Logged in | The user the token belongs to |
-| GET | `/categories` | Logged in | All categories |
-| POST | `/categories` | Admin | Add a category: `{ name }` |
-| PATCH | `/categories/:id` | Admin | Rename a category: `{ name }` |
-| DELETE | `/categories/:id` | Admin | Delete a category; returns `{ movedExpenses }` |
-| GET | `/expenses` | User | Your expenses, filtered and paginated (see below) |
+
+### Expenses
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/expenses` | User | Your expenses, filtered and paginated |
 | POST | `/expenses` | User | Add an expense |
 | GET | `/expenses/:id` | User | One of your expenses |
 | PATCH | `/expenses/:id` | User | Edit one of your expenses |
 | DELETE | `/expenses/:id` | User | Delete one of your expenses |
-| GET | `/budgets` | User | All your monthly budgets |
-| GET | `/budgets/:month` | User | One month's budget, e.g. `/budgets/2026-10` |
-| PUT | `/budgets/:month` | User | Set or replace a month's budget: `{ amount }` |
-| GET | `/dashboard?month=2026-10` | User | Totals, budget status, weekly and per-category spending, recent expenses |
-| GET | `/admin/overview` | Admin | Counts and totals across all users, category rankings, recent activity |
-| GET | `/admin/users` | Admin | All accounts |
-| GET | `/admin/categories` | Admin | Each category with how many expenses use it |
 
-Users can only see and change their own expenses and budgets. The admin account manages the app and can't use the personal endpoints.
-
-### Filtering expenses
-
-`GET /api/expenses` takes these optional query parameters:
+**Filtering:** `GET /api/expenses` takes these optional query parameters:
 
 | Parameter | Example | Notes |
 | --- | --- | --- |
@@ -163,7 +154,7 @@ Response:
 }
 ```
 
-### Adding an expense
+**Adding an expense:**
 
 ```http
 POST /api/expenses
@@ -175,8 +166,39 @@ Content-Type: application/json
 
 Returns `201` with the saved expense. The owner always comes from the token.
 
-## Known limitations
+### Categories
 
-- **Tokens can't be cancelled early.** Logins use stateless JWTs that last 1 day (30 with "Remember me"). Logging out deletes the token in the browser, but a copied token stays valid until it expires. Adding a `tokenVersion` to each user would allow cancelling them.
-- **No password reset**, since that needs a service to send emails.
-- **Render's free plan sleeps** when idle, so the first request after a while is slow.
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/categories` | Logged in | All categories |
+| POST | `/categories` | Admin | Add a category: `{ name }` |
+| PATCH | `/categories/:id` | Admin | Rename a category: `{ name }` |
+| DELETE | `/categories/:id` | Admin | Delete a category; returns `{ movedExpenses }` |
+
+### Budgets
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/budgets` | User | All your monthly budgets |
+| GET | `/budgets/:month` | User | One month's budget, e.g. `/budgets/2026-10` |
+| PUT | `/budgets/:month` | User | Set or replace a month's budget: `{ amount }` |
+
+### Dashboard
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/dashboard?month=2026-10` | User | Totals, budget status, weekly and per-category spending, recent expenses |
+
+### Admin
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/admin/overview` | Admin | Counts and totals across all users, category rankings, recent activity |
+| GET | `/admin/users` | Admin | All accounts |
+| GET | `/admin/categories` | Admin | Each category with how many expenses use it |
+
+### Health
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/health` | Public | API and database status |
