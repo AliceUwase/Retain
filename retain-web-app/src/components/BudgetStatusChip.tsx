@@ -1,5 +1,6 @@
 import { Chip } from '@mui/material';
-import { statusColor, type BudgetStatus } from '../utils/budget';
+import type { BudgetStatus } from '../types';
+import { statusColor } from '../utils/budget';
 
 const labels: Record<BudgetStatus, string> = {
   within: 'Within budget',

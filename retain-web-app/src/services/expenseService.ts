@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { FiltersState } from '../store/filtersSlice';
 import type { Expense, ExpenseInput, ExpensePage } from '../types';
 import { api } from './apiClient';
@@ -10,10 +11,16 @@ export function listExpenses(query: ExpenseQuery = {}): Promise<ExpensePage> {
   return api<ExpensePage>('/api/expenses', { query });
 }
 
-// every expense of the logged-in user (up to the API's 500 per request), for pages that still add things up themselves
-export async function getMyExpenses(): Promise<Expense[]> {
-  const { items } = await listExpenses({ limit: 500 });
-  return items;
+// how much was spent in a month ('YYYY-MM') and on how many expenses; limit 1 because
+// the totals cover the whole filtered month, so the list itself isn't needed
+export async function getMonthSpending(month: string): Promise<{ spent: number; count: number }> {
+  const start = dayjs(`${month}-01`);
+  const { total, totalAmount } = await listExpenses({
+    startDate: start.format('YYYY-MM-DD'),
+    endDate: start.endOf('month').format('YYYY-MM-DD'),
+    limit: 1,
+  });
+  return { spent: totalAmount, count: total };
 }
 
 export function getExpense(id: string): Promise<Expense> {
@@ -30,9 +37,4 @@ export function updateExpense(id: string, changes: Partial<ExpenseInput>): Promi
 
 export function deleteExpense(id: string): Promise<void> {
   return api<void>(`/api/expenses/${id}`, { method: 'DELETE' });
-}
-
-// no API gives every user's expenses; the admin overview switches to /api/admin/overview in the next step
-export async function getAllExpenses(): Promise<Expense[]> {
-  return [];
 }

@@ -1,30 +1,22 @@
-import { mockBudgets } from '../data/mockData';
 import type { Budget } from '../types';
-import { delay, loadList, now, saveList } from './storage';
+import { api, ApiError } from './apiClient';
 
-const KEY = 'budgets';
-
-function load(): Budget[] {
-  return loadList(KEY, mockBudgets);
+// every budget the logged-in user has set, for the month-by-month comparison
+export function getBudgets(): Promise<Budget[]> {
+  return api<Budget[]>('/api/budgets');
 }
 
-// for the month-by-month comparison
-export async function getBudgets(userId: string): Promise<Budget[]> {
-  await delay();
-  return load().filter((b) => b.userId === userId);
+// month is 'YYYY-MM'; the API answers 404 when none was set, which becomes undefined here
+export async function getBudget(month: string): Promise<Budget | undefined> {
+  try {
+    return await api<Budget>(`/api/budgets/${month}`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return undefined;
+    throw err;
+  }
 }
 
-// month is 'YYYY-MM', undefined if none was set
-export async function getBudget(userId: string, month: string): Promise<Budget | undefined> {
-  await delay();
-  return load().find((b) => b.userId === userId && b.month === month);
-}
-
-// adds the month's budget or replaces the old one
-export async function setBudget(userId: string, month: string, amount: number): Promise<Budget> {
-  await delay();
-  const budget: Budget = { userId, month, amount, updatedAt: now() };
-  const others = load().filter((b) => !(b.userId === userId && b.month === month));
-  saveList(KEY, [...others, budget]);
-  return budget;
+// creates the month's budget or replaces the old one (PUT)
+export function setBudget(month: string, amount: number): Promise<Budget> {
+  return api<Budget>(`/api/budgets/${month}`, { method: 'PUT', body: { amount } });
 }

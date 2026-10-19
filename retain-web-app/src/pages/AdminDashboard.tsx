@@ -5,21 +5,12 @@ import CategoryBreakdown from '../components/CategoryBreakdown';
 import CategoryIcon from '../components/CategoryIcon';
 import LoadError from '../components/LoadError';
 import StatCard from '../components/StatCard';
-import { getUsers } from '../services/authService';
-import { getCategories } from '../services/categoryService';
-import { getAllExpenses } from '../services/expenseService';
-import type { Category, Expense, PublicUser } from '../types';
-import { currentMonth, expensesIn, sumAmounts } from '../utils/budget';
+import { getAdminOverview } from '../services/dashboardService';
+import type { AdminOverview, CategoryUsage } from '../types';
 import { formatDate, formatMoney, formatMonth, formatShortDate, initials } from '../utils/format';
 
-interface CategoryCount {
-  id: string;
-  name: string;
-  count: number;
-}
-
 // a short ranked list of categories with their expense count
-function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: LucideIcon; rows: CategoryCount[] }) {
+function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: LucideIcon; rows: CategoryUsage[] }) {
   return (
     <Card sx={{ p: 3 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: 'text.secondary' }}>
@@ -30,12 +21,12 @@ function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: Lu
       </Stack>
       <Stack spacing={1.5} sx={{ mt: 2 }}>
         {rows.map((row, i) => (
-          <Stack key={row.id} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+          <Stack key={row.categoryId} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Typography sx={{ width: 16, fontSize: '0.8125rem', color: 'text.secondary' }}>{i + 1}</Typography>
             <CategoryIcon name={row.name} size={28} />
             <Typography sx={{ flex: 1, fontSize: '0.875rem' }}>{row.name}</Typography>
             <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
-              {row.count} {row.count === 1 ? 'expense' : 'expenses'}
+              {row.expenseCount} {row.expenseCount === 1 ? 'expense' : 'expenses'}
             </Typography>
           </Stack>
         ))}
@@ -45,51 +36,27 @@ function RankedCategories({ title, icon: Icon, rows }: { title: string; icon: Lu
 }
 
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<PublicUser[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AdminOverview | null>(null); // null until loaded
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
+  // one request: the API adds everything up across all users
   useEffect(() => {
-    Promise.all([getUsers(), getAllExpenses(), getCategories()])
-      .then(([userList, expenseList, categoryList]) => {
-        setUsers(userList);
-        setExpenses(expenseList);
-        setCategories(categoryList);
-        setLoading(false);
-      })
+    getAdminOverview()
+      .then(setData)
       .catch(() => setLoadError(true));
   }, [attempt]);
 
   function retry() {
     setLoadError(false);
-    setLoading(true);
+    setData(null);
     setAttempt((n) => n + 1);
   }
 
   if (loadError) return <LoadError onRetry={retry} />;
-  if (loading) return <Typography color="text.secondary">Loading admin overview…</Typography>;
+  if (!data) return <Typography color="text.secondary">Loading admin overview…</Typography>;
 
-  const month = currentMonth();
-  const normalUsers = users.filter((u) => u.role === 'user');
-  const joinedThisMonth = normalUsers.filter((u) => u.createdAt.startsWith(month)).length;
-  const thisMonth = expensesIn(expenses, month);
-  const userName = (id: string) => users.find((u) => u.id === id)?.name ?? 'Unknown user';
-  const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? 'Uncategorized';
-
-  // every category with how many expenses use it, unused ones included
-  const counts: CategoryCount[] = categories.map((c) => ({
-    id: c.id,
-    name: c.name,
-    count: expenses.filter((e) => e.categoryId === c.id).length,
-  }));
-  const top5 = [...counts].sort((a, b) => b.count - a.count).slice(0, 5);
-  const bottom5 = [...counts].sort((a, b) => a.count - b.count).slice(0, 5);
-
-  const recentExpenses = [...expenses].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
-  const newestUsers = [...normalUsers].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
+  const { users, expenses, thisMonth } = data;
 
   return (
     <Box>
@@ -99,21 +66,21 @@ export default function AdminDashboard() {
       </Typography>
 
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' } }}>
-        <StatCard title="Users" icon={<Users size={18} />} value={String(normalUsers.length)} caption={`${joinedThisMonth} joined this month`} />
-        <StatCard title="Expenses" icon={<ReceiptText size={18} />} value={String(expenses.length)} caption="Recorded by all users" />
-        <StatCard title="Total value" icon={<Coins size={18} />} value={formatMoney(sumAmounts(expenses))} caption="All expenses, all time" />
+        <StatCard title="Users" icon={<Users size={18} />} value={String(users.total)} caption={`${users.joinedThisMonth} joined this month`} />
+        <StatCard title="Expenses" icon={<ReceiptText size={18} />} value={String(expenses.count)} caption="Recorded by all users" />
+        <StatCard title="Total value" icon={<Coins size={18} />} value={formatMoney(expenses.totalAmount)} caption="All expenses, all time" />
         <StatCard
           title="This month"
           icon={<CalendarDays size={18} />}
-          value={String(thisMonth.length)}
-          caption={`Expenses in ${formatMonth(month)} · ${formatMoney(sumAmounts(thisMonth))}`}
+          value={String(thisMonth.count)}
+          caption={`Expenses in ${formatMonth(thisMonth.month)} · ${formatMoney(thisMonth.totalAmount)}`}
         />
       </Box>
 
       <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, alignItems: 'start' }}>
-        <CategoryBreakdown title="Spending per category" expenses={expenses} categories={categories} />
-        <RankedCategories title="Most used categories" icon={TrendingUp} rows={top5} />
-        <RankedCategories title="Least used categories" icon={TrendingDown} rows={bottom5} />
+        <CategoryBreakdown title="Spending per category" rows={data.spendingByCategory} />
+        <RankedCategories title="Most used categories" icon={TrendingUp} rows={data.mostUsedCategories} />
+        <RankedCategories title="Least used categories" icon={TrendingDown} rows={data.leastUsedCategories} />
       </Box>
 
       <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: '1.6fr 1fr' }, alignItems: 'start' }}>
@@ -134,16 +101,16 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {recentExpenses.map((e) => (
+                {data.recentExpenses.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell>
                       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                        <CategoryIcon name={categoryName(e.categoryId)} size={32} />
+                        <CategoryIcon name={e.categoryName} size={32} />
                         <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{e.title}</Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell sx={{ color: 'text.secondary' }}>{userName(e.userId)}</TableCell>
-                    <TableCell sx={{ color: 'text.secondary' }}>{categoryName(e.categoryId)}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{e.userName}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{e.categoryName}</TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{formatShortDate(e.date)}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>
                       {formatMoney(e.amount)}
@@ -158,7 +125,7 @@ export default function AdminDashboard() {
         <Card sx={{ p: 3 }}>
           <Typography variant="h2">Recently registered</Typography>
           <Stack spacing={2} sx={{ mt: 2 }}>
-            {newestUsers.map((u) => (
+            {data.recentUsers.map((u) => (
               <Stack key={u.id} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.light', color: 'primary.dark', fontSize: '0.875rem', fontWeight: 600 }}>
                   {initials(u.name)}

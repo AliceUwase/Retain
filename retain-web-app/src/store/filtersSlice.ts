@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import dayjs from 'dayjs';
-import type { Expense, PaymentMethod } from '../types';
+import type { PaymentMethod } from '../types';
 
 export type SortBy = 'date' | 'amount';
 export type SortOrder = 'asc' | 'desc';
@@ -16,7 +16,7 @@ export interface FiltersState {
   page: number;
 }
 
-export const PAGE_SIZE = 10;
+export const PAGE_SIZE = 10; // sent to the API as `limit`
 
 // starts on the current month
 const initialState: FiltersState = {
@@ -91,30 +91,3 @@ export const {
 } = filtersSlice.actions;
 
 export default filtersSlice.reducer;
-
-// the filtered, sorted list (not split into pages yet)
-export function applyFilters(expenses: Expense[], filters: FiltersState): Expense[] {
-  const search = filters.search.trim().toLowerCase();
-
-  const filtered = expenses.filter((e) => {
-    if (search && !e.title.toLowerCase().includes(search) && !e.notes?.toLowerCase().includes(search)) return false;
-    if (filters.category && e.categoryId !== filters.category) return false;
-    if (filters.paymentMethod && e.paymentMethod !== filters.paymentMethod) return false;
-    // 'YYYY-MM-DD' strings compare correctly as text
-    if (filters.startDate && e.date < filters.startDate) return false;
-    if (filters.endDate && e.date > filters.endDate) return false;
-    return true;
-  });
-
-  const direction = filters.sortOrder === 'asc' ? 1 : -1;
-  return filtered.sort((a, b) => {
-    const diff = filters.sortBy === 'amount' ? a.amount - b.amount : a.date.localeCompare(b.date);
-    return diff * direction;
-  });
-}
-
-// just the expenses for the current page
-export function getPage(expenses: Expense[], page: number): Expense[] {
-  const start = (page - 1) * PAGE_SIZE;
-  return expenses.slice(start, start + PAGE_SIZE);
-}

@@ -1,25 +1,24 @@
+// the shapes the API sends and receives (see retain-api)
+
 export type Role = 'user' | 'admin';
 
 export type PaymentMethod = 'Cash' | 'Card' | 'Mobile Money' | 'Bank Transfer';
 
 export const PAYMENT_METHODS: PaymentMethod[] = ['Cash', 'Card', 'Mobile Money', 'Bank Transfer'];
 
-export interface User {
+// a user as the API returns them; the password hash never leaves the server
+export interface PublicUser {
   id: string;
   name: string;
   email: string;
-  password: string; // plain text for now, the backend will hash it
   role: Role;
   createdAt: string; // when they signed up (ISO)
 }
 
-// a user minus the password, what we keep after login
-export type PublicUser = Omit<User, 'password'>;
-
 export interface Category {
   id: string;
   name: string;
-  isDefault?: boolean; // true only for "Uncategorized"; optional until the mock data is removed
+  isDefault: boolean; // true only for "Uncategorized"
 }
 
 // GET /api/admin/categories: a category with how many expenses (all users) use it
@@ -58,8 +57,55 @@ export interface ExpensePage {
 }
 
 export interface Budget {
+  id: string;
   userId: string;
   month: string; // 'YYYY-MM'
   amount: number;
   updatedAt: string; // last time it was set (ISO)
+}
+
+export type BudgetStatus = 'within' | 'approaching' | 'over';
+
+// a category's total, used by "Where it went" and the admin's "Spending per category"
+export interface CategoryTotal {
+  categoryId: string;
+  name: string;
+  total: number;
+}
+
+// GET /api/dashboard?month=: everything the Overview page shows for one month
+export interface DashboardData {
+  month: string;
+  totalSpent: number;
+  expenseCount: number;
+  categoryCount: number;
+  previousMonth: { month: string; totalSpent: number };
+  budget: { amount: number; remaining: number; percentUsed: number; status: BudgetStatus } | null;
+  weekly: { label: string; total: number }[]; // always 4 weeks: '1–7', '8–14', '15–21', '22–31'
+  byCategory: CategoryTotal[]; // biggest first
+  recent: Expense[]; // the 5 newest of the month
+}
+
+// one of the latest expenses from any user, with names already joined in by the API
+export interface AdminRecentExpense {
+  id: string;
+  title: string;
+  amount: number;
+  date: string;
+  paymentMethod: PaymentMethod;
+  createdAt: string;
+  userName: string;
+  categoryName: string;
+}
+
+// GET /api/admin/overview
+export interface AdminOverview {
+  users: { total: number; joinedThisMonth: number };
+  expenses: { count: number; totalAmount: number };
+  thisMonth: { month: string; count: number; totalAmount: number };
+  spendingByCategory: CategoryTotal[];
+  mostUsedCategories: CategoryUsage[];
+  leastUsedCategories: CategoryUsage[];
+  recentExpenses: AdminRecentExpense[];
+  recentUsers: PublicUser[];
 }

@@ -1,9 +1,7 @@
 import dayjs from 'dayjs';
-import type { Expense } from '../types';
+import type { BudgetStatus } from '../types';
 
-export type BudgetStatus = 'within' | 'approaching' | 'over';
-
-// within: under 80%, approaching: 80–100%, over: above 100%
+// within: under 80%, approaching: 80–100%, over: above 100% (the same rule as the API)
 export function getBudgetStatus(spent: number, budget: number): BudgetStatus {
   const percent = percentUsed(spent, budget);
   if (percent > 100) return 'over';
@@ -22,6 +20,7 @@ export const statusColor: Record<BudgetStatus, 'success' | 'warning' | 'error'> 
   over: 'error',
 };
 
+// the month on the user's own computer, so it's never off around midnight like the server's could be
 export function currentMonth(): string {
   return dayjs().format('YYYY-MM');
 }
@@ -29,13 +28,4 @@ export function currentMonth(): string {
 // shiftMonth('2026-01', -1) -> '2025-12'
 export function shiftMonth(month: string, by: number): string {
   return dayjs(`${month}-01`).add(by, 'month').format('YYYY-MM');
-}
-
-// the expenses dated in a month ('YYYY-MM')
-export function expensesIn(expenses: Expense[], month: string): Expense[] {
-  return expenses.filter((e) => e.date.startsWith(month));
-}
-
-export function sumAmounts(expenses: Expense[]): number {
-  return expenses.reduce((sum, e) => sum + e.amount, 0);
 }

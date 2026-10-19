@@ -1,6 +1,6 @@
 import { Box, Card, LinearProgress, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { Category, Expense } from '../types';
+import type { CategoryTotal } from '../types';
 import { formatMoney } from '../utils/format';
 
 const SHOWN = 4; // the rest are summed up in one line at the bottom
@@ -12,19 +12,12 @@ function joinNames(names: string[]): string {
 }
 
 interface CategoryBreakdownProps {
-  expenses: Expense[];
-  categories: Category[];
+  rows: CategoryTotal[]; // from the API, already biggest first
   title?: string;
 }
 
-// spending per category, biggest first
-export default function CategoryBreakdown({ expenses, categories, title = 'Where it went' }: CategoryBreakdownProps) {
-  const totals = new Map<string, number>();
-  for (const e of expenses) totals.set(e.categoryId, (totals.get(e.categoryId) ?? 0) + e.amount);
-
-  const rows = [...totals.entries()]
-    .map(([id, total]) => ({ name: categories.find((c) => c.id === id)?.name ?? 'Uncategorized', total }))
-    .sort((a, b) => b.total - a.total);
+// spending per category; each bar shows the category's share of the total
+export default function CategoryBreakdown({ rows, title = 'Where it went' }: CategoryBreakdownProps) {
   const grandTotal = rows.reduce((sum, r) => sum + r.total, 0);
   const shown = rows.slice(0, SHOWN);
   const rest = rows.slice(SHOWN);
@@ -38,7 +31,7 @@ export default function CategoryBreakdown({ expenses, categories, title = 'Where
       ) : (
         <Stack spacing={2} sx={{ mt: 2.5 }}>
           {shown.map((row, i) => (
-            <Box key={row.name}>
+            <Box key={row.categoryId}>
               <Stack direction="row" sx={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
                 <Typography sx={{ fontSize: 'inherit' }}>{row.name}</Typography>
                 <Typography sx={{ fontSize: 'inherit' }}>{formatMoney(row.total)}</Typography>

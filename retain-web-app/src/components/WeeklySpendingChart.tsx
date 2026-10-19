@@ -2,35 +2,17 @@ import { Card, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import dayjs from 'dayjs';
-import type { Expense } from '../types';
 import { formatMonth } from '../utils/format';
 
-// splits a month into 1–7, 8–14, 15–21 and 22–end, with the total spent in each
-function weeklyTotals(expenses: Expense[], month: string) {
-  const start = dayjs(`${month}-01`);
-  const lastDay = start.daysInMonth();
-  const ranges = [
-    [1, 7],
-    [8, 14],
-    [15, 21],
-    [22, lastDay],
-  ];
-
-  return ranges.map(([from, to]) => ({
-    label: `${start.format('MMM')} ${from}–${to}`,
-    total: expenses
-      .filter((e) => {
-        const day = dayjs(e.date).date();
-        return day >= from && day <= to;
-      })
-      .reduce((sum, e) => sum + e.amount, 0),
-  }));
+interface WeeklySpendingChartProps {
+  month: string; // 'YYYY-MM'
+  weeks: { label: string; total: number }[]; // from the API: '1–7', '8–14', '15–21', '22–31'
 }
 
-// expenses should already be limited to `month`
-export default function WeeklySpendingChart({ expenses, month }: { expenses: Expense[]; month: string }) {
+export default function WeeklySpendingChart({ month, weeks }: WeeklySpendingChartProps) {
   const theme = useTheme();
-  const weeks = weeklyTotals(expenses, month);
+  const monthShort = dayjs(`${month}-01`).format('MMM');
+  const labels = weeks.map((w) => `${monthShort} ${w.label}`); // "Oct 1–7"
   const biggest = Math.max(...weeks.map((w) => w.total));
 
   return (
@@ -45,11 +27,11 @@ export default function WeeklySpendingChart({ expenses, month }: { expenses: Exp
         xAxis={[
           {
             scaleType: 'band',
-            data: weeks.map((w) => w.label),
+            data: labels,
             // the busiest week stands out in the full colour, the rest are lighter
             colorMap: {
               type: 'ordinal',
-              values: weeks.map((w) => w.label),
+              values: labels,
               colors: weeks.map((w) =>
                 w.total === biggest && biggest > 0 ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.55),
               ),

@@ -7,11 +7,10 @@ import BudgetCard from '../components/BudgetCard';
 import BudgetStatusChip from '../components/BudgetStatusChip';
 import FormField from '../components/FormField';
 import LoadError from '../components/LoadError';
-import { useAuth } from '../context/AuthContext';
 import { getBudgets, setBudget } from '../services/budgetService';
-import { getMyExpenses } from '../services/expenseService';
-import type { Budget as BudgetType, Expense } from '../types';
-import { currentMonth, expensesIn, getBudgetStatus, percentUsed, shiftMonth, statusColor, sumAmounts } from '../utils/budget';
+import { getMonthSpending } from '../services/expenseService';
+import type { Budget as BudgetType } from '../types';
+import { currentMonth, getBudgetStatus, percentUsed, shiftMonth, statusColor } from '../utils/budget';
 import { formatDateTime, formatMoney, formatMonth, formatPercent } from '../utils/format';
 
 const statusIcons = { within: CircleCheck, approaching: TriangleAlert, over: CircleAlert };
@@ -100,41 +99,53 @@ function BudgetForm({
 }
 
 export default function Budget() {
-  const { user } = useAuth();
   const [month, setMonth] = useState(currentMonth()); // the month being looked at
-  const [budgets, setBudgets] = useState<BudgetType[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [budgets, setBudgets] = useState<BudgetType[] | null>(null); // null until loaded
+  // 'YYYY-MM' → what was spent that month; filled for the selected month and the two before it
+  const [spending, setSpending] = useState<Record<string, { spent: number; count: number }>>({});
   const [message, setMessage] = useState('');
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
-    if (!user) return;
-    Promise.all([getBudgets(user.id), getMyExpenses()])
-      .then(([budgetList, expenseList]) => {
-        setBudgets(budgetList);
-        setExpenses(expenseList);
-        setLoading(false);
-      })
+    getBudgets()
+      .then(setBudgets)
       .catch(() => setLoadError(true));
-  }, [user, attempt]);
+  }, [attempt]);
+
+  // three small requests (this month and the two before), run again whenever another month is picked
+  useEffect(() => {
+    let cancelled = false;
+    const months = [0, -1, -2].map((offset) => shiftMonth(month, offset));
+    Promise.all(months.map(getMonthSpending))
+      .then((results) => {
+        if (cancelled) return;
+        // keeps months loaded earlier, so going back to a month doesn't flash empty
+        setSpending((current) => ({ ...current, ...Object.fromEntries(months.map((m, i) => [m, results[i]])) }));
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [month, attempt]);
 
   function retry() {
     setLoadError(false);
-    setLoading(true);
+    setBudgets(null);
+    setSpending({});
     setAttempt((n) => n + 1);
   }
 
   if (loadError) return <LoadError onRetry={retry} />;
-  if (loading) return <Typography color="text.secondary">Loading budget…</Typography>;
+  if (!budgets || !spending[month]) return <Typography color="text.secondary">Loading budget…</Typography>;
 
   const budgetFor = (m: string) => budgets.find((b) => b.month === m);
-  const spentIn = (m: string) => sumAmounts(expensesIn(expenses, m));
+  const spentIn = (m: string) => spending[m]?.spent ?? 0;
 
   const budget = budgetFor(month);
-  const monthExpenses = expensesIn(expenses, month);
-  const spent = sumAmounts(monthExpenses);
+  const { spent, count } = spending[month];
   const status = budget ? getBudgetStatus(spent, budget.amount) : 'none';
   const color = status === 'none' ? 'success' : statusColor[status];
   const remaining = budget ? budget.amount - spent : 0;
@@ -170,9 +181,8 @@ export default function Budget() {
   }
 
   async function handleSave(forMonth: string, amount: number) {
-    if (!user) return;
-    const saved = await setBudget(user.id, forMonth, amount);
-    setBudgets((current) => [...current.filter((b) => b.month !== forMonth), saved]);
+    const saved = await setBudget(forMonth, amount);
+    setBudgets((current) => [...(current ?? []).filter((b) => b.month !== forMonth), saved]);
     setMessage(`Budget for ${formatMonth(forMonth)} saved.`);
   }
 
@@ -223,7 +233,7 @@ export default function Budget() {
               <LinearProgress variant="determinate" value={Math.min(percent, 100)} color={color} sx={{ mt: 2.5, height: 10, borderRadius: 5 }} />
               <Stack direction="row" sx={{ mt: 1.5, justifyContent: 'space-between' }}>
                 <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
-                  {formatPercent(percent)} used · {monthExpenses.length} expenses
+                  {formatPercent(percent)} used · {count} expenses
                 </Typography>
                 <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600 }}>{formatMoney(budget.amount)} monthly budget</Typography>
               </Stack>
