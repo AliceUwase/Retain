@@ -9,7 +9,7 @@ import FormField from '../components/FormField';
 import LoadError from '../components/LoadError';
 import { useAuth } from '../context/AuthContext';
 import { getBudgets, setBudget } from '../services/budgetService';
-import { getExpenses } from '../services/expenseService';
+import { getMyExpenses } from '../services/expenseService';
 import type { Budget as BudgetType, Expense } from '../types';
 import { currentMonth, expensesIn, getBudgetStatus, percentUsed, shiftMonth, statusColor, sumAmounts } from '../utils/budget';
 import { formatDateTime, formatMoney, formatMonth, formatPercent } from '../utils/format';
@@ -111,7 +111,7 @@ export default function Budget() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getBudgets(user.id), getExpenses(user.id)])
+    Promise.all([getBudgets(user.id), getMyExpenses()])
       .then(([budgetList, expenseList]) => {
         setBudgets(budgetList);
         setExpenses(expenseList);

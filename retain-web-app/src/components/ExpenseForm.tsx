@@ -16,7 +16,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 import { CalendarCheck, Check, RotateCcw, X } from 'lucide-react';
 import { useState, type SubmitEvent } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { addExpense, updateExpense } from '../services/expenseService';
 import { PAYMENT_METHODS, type Category, type Expense, type ExpenseInput, type PaymentMethod } from '../types';
 import FormField, { FieldLabel } from './FormField';
@@ -32,7 +31,6 @@ type Errors = Partial<Record<'title' | 'amount' | 'date' | 'categoryId' | 'payme
 
 // one dialog for both adding and editing; the parent only renders it while it's open
 export default function ExpenseForm({ expense, categories, onClose, onSaved }: ExpenseFormProps) {
-  const { user } = useAuth();
   const theme = useTheme();
   const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
   const isEdit = expense !== undefined;
@@ -63,16 +61,15 @@ export default function ExpenseForm({ expense, categories, onClose, onSaved }: E
     event.preventDefault();
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length > 0 || !user || !date || !paymentMethod) return;
+    if (Object.keys(found).length > 0 || !date || !paymentMethod) return;
 
     const input: ExpenseInput = {
-      userId: expense?.userId ?? user.id,
       title: title.trim(),
       amount: amountNumber,
       categoryId,
       date: date.format('YYYY-MM-DD'),
       paymentMethod,
-      notes: notes.trim() || undefined,
+      notes: notes.trim(), // an empty string clears the notes when editing; leaving it out would keep the old ones
     };
 
     setSaving(true);

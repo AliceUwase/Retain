@@ -8,9 +8,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import LoadError from '../components/LoadError';
-import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../services/apiClient';
 import { getCategories } from '../services/categoryService';
-import { deleteExpense, getExpenses } from '../services/expenseService';
+import { deleteExpense, getExpense, listExpenses } from '../services/expenseService';
 import type { Category, Expense, PaymentMethod } from '../types';
 import { formatDateTime, formatLongDate, formatMoney } from '../utils/format';
 
@@ -44,11 +44,12 @@ function DetailItem({ label, icon, value }: { label: string; icon: ReactNode; va
 
 export default function ExpenseDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expense, setExpense] = useState<Expense | null>(null);
+  const [related, setRelated] = useState<Expense[]>([]); // same category, same month
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -56,17 +57,43 @@ export default function ExpenseDetail() {
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
-  // all of the user's expenses, so we also get the "Also in" list
   useEffect(() => {
-    if (!user) return;
-    Promise.all([getExpenses(user.id), getCategories()])
-      .then(([expenseList, categoryList]) => {
-        setExpenses(expenseList);
+    if (!id) return;
+    let cancelled = false; // set when the user leaves or opens another expense before this finishes
+
+    async function load(expenseId: string) {
+      try {
+        const [found, categoryList] = await Promise.all([getExpense(expenseId), getCategories()]);
+        // "Also in": the same filtered list the Expenses page uses, limited to this category and month
+        const month = dayjs(found.date);
+        const sameMonth = await listExpenses({
+          category: found.categoryId,
+          startDate: month.startOf('month').format('YYYY-MM-DD'),
+          endDate: month.endOf('month').format('YYYY-MM-DD'),
+          limit: 6, // this expense plus up to 5 others
+        });
+        if (cancelled) return;
+        setExpense(found);
         setCategories(categoryList);
+        setRelated(sameMonth.items.filter((e) => e.id !== found.id).slice(0, 5));
         setLoading(false);
-      })
-      .catch(() => setLoadError(true));
-  }, [user, attempt]);
+      } catch (err) {
+        if (cancelled) return;
+        // the API answers 404 for a deleted expense and for someone else's, without saying which
+        if (err instanceof ApiError && err.status === 404) {
+          setNotFound(true);
+          setLoading(false);
+        } else {
+          setLoadError(true);
+        }
+      }
+    }
+
+    load(id);
+    return () => {
+      cancelled = true;
+    };
+  }, [id, attempt]);
 
   function retry() {
     setLoadError(false);
@@ -83,9 +110,7 @@ export default function ExpenseDetail() {
   if (loadError) return <LoadError onRetry={retry} />;
   if (loading) return <Typography color="text.secondary">Loading expense…</Typography>;
 
-  // also covers someone else's expense id, since we only loaded this user's
-  const expense = expenses.find((e) => e.id === id);
-  if (!expense) {
+  if (notFound || !expense) {
     return (
       <Box>
         {backLink}
@@ -101,16 +126,11 @@ export default function ExpenseDetail() {
   const month = dayjs(expense.date).format('MMMM YYYY');
   const PaymentIcon = paymentIcons[expense.paymentMethod];
 
-  // same category, same month, newest first, up to 5
-  const related = expenses
-    .filter((e) => e.id !== expense.id && e.categoryId === expense.categoryId && e.date.slice(0, 7) === expense.date.slice(0, 7))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
-
-  function handleSaved(saved: Expense) {
-    setExpenses((current) => current.map((e) => (e.id === saved.id ? saved : e)));
+  // a new category or date changes the "Also in" list too, so both are loaded again
+  function handleSaved() {
     setEditing(false);
     setMessage('Changes saved.');
+    setAttempt((n) => n + 1);
   }
 
   async function handleDelete() {
@@ -118,10 +138,10 @@ export default function ExpenseDetail() {
     try {
       await deleteExpense(expense!.id);
       navigate('/expenses');
-    } catch {
+    } catch (err) {
       setDeleting(false);
       setConfirmDelete(false);
-      setMessage("Couldn't delete the expense. Please try again.");
+      setMessage((err as Error).message);
     }
   }
 

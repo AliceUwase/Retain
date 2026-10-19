@@ -13,7 +13,7 @@ import WeeklySpendingChart from '../components/WeeklySpendingChart';
 import { useAuth } from '../context/AuthContext';
 import { getBudgets } from '../services/budgetService';
 import { getCategories } from '../services/categoryService';
-import { getExpenses } from '../services/expenseService';
+import { getMyExpenses } from '../services/expenseService';
 import { setEndDate, setStartDate } from '../store/filtersSlice';
 import { useAppDispatch } from '../store/store';
 import type { Budget, Category, Expense } from '../types';
@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getExpenses(user.id), getCategories(), getBudgets(user.id)])
+    Promise.all([getMyExpenses(), getCategories(), getBudgets(user.id)])
       .then(([expenseList, categoryList, budgetList]) => {
         setExpenses(expenseList);
         setCategories(categoryList);

@@ -6,51 +6,81 @@ import ExpenseList from '../components/ExpenseList';
 import FilterBar from '../components/FilterBar';
 import LoadError from '../components/LoadError';
 import Pagination from '../components/Pagination';
-import { useAuth } from '../context/AuthContext';
 import { getCategories } from '../services/categoryService';
-import { getExpenses } from '../services/expenseService';
-import { applyFilters, getPage } from '../store/filtersSlice';
+import { listExpenses } from '../services/expenseService';
+import { PAGE_SIZE } from '../store/filtersSlice';
 import { useAppSelector } from '../store/store';
-import type { Category, Expense } from '../types';
+import type { Category, Expense, ExpensePage } from '../types';
 import { downloadExpensesCsv } from '../utils/csv';
 import { formatMoney } from '../utils/format';
 
+const EXPORT_LIMIT = 500; // the most the API returns in one request
+
 export default function Expenses() {
-  const { user } = useAuth();
   const filters = useAppSelector((state) => state.filters);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<ExpensePage | null>(null); // null until the first page arrives
   const [formOpen, setFormOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState(''); // success message at the bottom
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumping this loads the data again
 
   useEffect(() => {
-    if (!user) return;
-    Promise.all([getCategories(), getExpenses(user.id)])
-      .then(([categoryList, expenseList]) => {
-        setCategories(categoryList);
-        setExpenses(expenseList);
-        setLoading(false);
-      })
+    getCategories()
+      .then(setCategories)
       .catch(() => setLoadError(true));
-  }, [user, attempt]);
+  }, [attempt]);
+
+  // asks the API for the current page whenever a filter, the sort or the page changes
+  useEffect(() => {
+    let cancelled = false;
+    // waits 300ms, so typing "groceries" sends one request instead of nine;
+    // a new change within that time cancels the waiting one
+    const timer = setTimeout(() => {
+      listExpenses({ ...filters, limit: PAGE_SIZE })
+        .then((page) => {
+          if (!cancelled) setResult(page); // ignores an answer that arrives after newer filters were set
+        })
+        .catch(() => {
+          if (!cancelled) setLoadError(true);
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [filters, attempt]);
 
   function retry() {
     setLoadError(false);
-    setLoading(true);
+    setResult(null);
     setAttempt((n) => n + 1);
   }
 
-  const filtered = applyFilters(expenses, filters);
-  const total = filtered.reduce((sum, e) => sum + e.amount, 0);
-
+  // the new expense might land on another page or be hidden by a filter, so the page is loaded again
   function handleSaved(expense: Expense) {
-    setExpenses((current) => [...current, expense]);
     setFormOpen(false);
     setMessage(`"${expense.title}" was added.`);
+    setAttempt((n) => n + 1);
   }
+
+  // exports everything that matches the filters, not just this page, so it asks for up to 500 at once
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const all = await listExpenses({ ...filters, page: 1, limit: EXPORT_LIMIT });
+      downloadExpensesCsv(all.items, categories);
+      if (all.total > EXPORT_LIMIT) setMessage(`Exported the first ${EXPORT_LIMIT} of ${all.total} expenses.`);
+    } catch (err) {
+      setMessage((err as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const total = result?.total ?? 0;
 
   return (
     <Box>
@@ -62,13 +92,13 @@ export default function Expenses() {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1.5}>
-          {/* exports what's currently filtered, not just this page */}
           <Button
             variant="outlined"
             size="large"
             startIcon={<Download size={18} />}
-            disabled={filtered.length === 0}
-            onClick={() => downloadExpensesCsv(filtered, categories)}
+            disabled={total === 0}
+            loading={exporting}
+            onClick={handleExport}
             sx={{ borderColor: 'divider', color: 'text.primary', bgcolor: 'background.paper' }}
           >
             Export CSV
@@ -84,24 +114,25 @@ export default function Expenses() {
       <Card sx={{ mt: 3 }}>
         <Stack direction="row" sx={{ px: 2.5, py: 2, gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="h2">Expenses</Typography>
-          <Chip size="small" label={`${filtered.length} records`} />
+          <Chip size="small" label={`${total} records`} />
           <Typography sx={{ ml: 'auto', fontSize: '0.8125rem', color: 'text.secondary' }}>
             Total for this view{' '}
             <Box component="span" sx={{ ml: 1, fontSize: '1.125rem', fontWeight: 600, color: 'text.primary' }}>
-              {formatMoney(total)}
+              {formatMoney(result?.totalAmount ?? 0)}
             </Box>
           </Typography>
         </Stack>
 
         {loadError ? (
           <LoadError onRetry={retry} />
-        ) : loading ? (
+        ) : result === null ? (
           <Typography sx={{ px: 2.5, py: 6, textAlign: 'center', color: 'text.secondary' }}>Loading expenses…</Typography>
         ) : (
-          <ExpenseList expenses={getPage(filtered, filters.page)} categories={categories} />
+          <ExpenseList expenses={result.items} categories={categories} />
         )}
 
-        <Pagination totalItems={filtered.length} />
+        {/* only once the real total is known: with 0 it would move you back to page 1 */}
+        {result && <Pagination totalItems={total} />}
       </Card>
 
       {formOpen && <ExpenseForm categories={categories} onClose={() => setFormOpen(false)} onSaved={handleSaved} />}

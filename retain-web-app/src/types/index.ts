@@ -44,8 +44,18 @@ export interface Expense {
   updatedAt: string; // last edit (ISO)
 }
 
-// what the form sends, the service fills in id and timestamps
-export type ExpenseInput = Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>;
+// what the form sends; the API fills in the id, the timestamps, and the owner (from the login token)
+export type ExpenseInput = Omit<Expense, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+
+// GET /api/expenses: one page of results, plus totals for the whole filtered list
+export interface ExpensePage {
+  items: Expense[];
+  total: number;
+  totalAmount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export interface Budget {
   userId: string;
