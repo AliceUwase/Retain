@@ -7,7 +7,7 @@ export function required(name: string): string {
   return value;
 }
 
-// a short secret can be guessed by trying many values, which would let anyone forge login tokens
+// secrets are required to be long enough to be not obvious. the server doesn't start if they are too short
 function secret(name: string): string {
   const value = required(name);
   if (value.length < 32) throw new Error(`${name} must be at least 32 characters long`);
@@ -19,4 +19,6 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   mongodbUri: required('MONGODB_URI'),
   jwtSecret: secret('JWT_SECRET'),
+  // the client URLs are used in CORS to allow only those websites to call the API
+  clientUrls: (process.env.CLIENT_URL ?? 'http://localhost:5173').split(',').map((url) => url.trim()),
 };
