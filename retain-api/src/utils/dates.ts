@@ -13,3 +13,26 @@ export function isRealDate(value: string): boolean {
 export function isRealMonth(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
+
+function toMonth(year: number, monthIndex: number): string {
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+}
+
+// the server's current month, used only when the client doesn't send one
+export function currentMonth(): string {
+  const now = new Date();
+  return toMonth(now.getFullYear(), now.getMonth());
+}
+
+// shiftMonth('2026-01', -1) gives '2025-12'
+export function shiftMonth(month: string, by: number): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const date = new Date(Date.UTC(year, monthNumber - 1 + by, 1)); // Date handles moving past January or December
+  return toMonth(date.getUTCFullYear(), date.getUTCMonth());
+}
+
+// 30 for '2026-11', 29 for '2024-02'
+export function daysInMonth(month: string): number {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return new Date(Date.UTC(year, monthNumber, 0)).getUTCDate(); // day 0 of next month = last day of this one
+}
