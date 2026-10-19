@@ -21,6 +21,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // express.json() throws this when a body is over its 10kb limit
+  if (typeof err === 'object' && err !== null && 'type' in err && err.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Request body is too large.' });
+    return;
+  }
+
   // an id that isn't a valid MongoDB id (like /api/categories/abc) can't match anything
   if (err instanceof mongoose.Error.CastError) {
     res.status(404).json({ error: 'Not found.' });
