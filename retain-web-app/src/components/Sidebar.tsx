@@ -67,8 +67,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2.5, bgcolor: '#EFEEE7' }}>
-      {/* logo image goes here once it's in src/assets */}
-      <Typography sx={{ px: 1, mb: 4, fontSize: '1.625rem', fontWeight: 500 }}>Retain</Typography>
+      <Box component="img" src="/retain-logo.png" alt="Retain" sx={{ height: 56, alignSelf: 'flex-start', mx: 1, mb: 4 }} />
 
       <NavLinks items={user.role === 'admin' ? adminLinks : personalLinks} onNavigate={onNavigate} />
 
