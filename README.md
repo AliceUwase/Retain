@@ -16,14 +16,6 @@ Retain is a personal expense tracker. A user can log what they spend, set a mont
 
 > The API runs on Render's free plan and sleeps when idle, so the first request can take up to a minute.
 
-## Contents
-
-- [Features](#features)
-- [Tech stack](#tech-stack)
-- [Project structure](#project-structure)
-- [Running it locally](#running-it-locally)
-- [API](#api)
-- [Known limitations](#known-limitations)
 
 ## Features
 
