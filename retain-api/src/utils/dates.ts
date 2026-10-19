@@ -31,6 +31,12 @@ export function shiftMonth(month: string, by: number): string {
   return toMonth(date.getUTCFullYear(), date.getUTCMonth());
 }
 
+// a MongoDB condition for "dated in this month"; '-31' works for every month, because
+// text like '2026-11-31' still sorts after the last real day and before the next month
+export function monthRange(month: string) {
+  return { $gte: `${month}-01`, $lte: `${month}-31` };
+}
+
 // 30 for '2026-11', 29 for '2024-02'
 export function daysInMonth(month: string): number {
   const [year, monthNumber] = month.split('-').map(Number);

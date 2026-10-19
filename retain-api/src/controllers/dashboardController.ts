@@ -3,41 +3,13 @@ import { Types } from 'mongoose';
 import { Budget } from '../models/Budget';
 import { Expense } from '../models/Expense';
 import type { DashboardQuery } from '../schemas/dashboardSchemas';
+import { spendingByCategory, sumExpenses } from '../services/expenseStats';
 import { budgetStatus, round2 } from '../utils/budget';
-import { currentMonth, daysInMonth, shiftMonth } from '../utils/dates';
+import { currentMonth, daysInMonth, monthRange, shiftMonth } from '../utils/dates';
 
-// one user's expenses dated in a month: '-01' to '-31' works for every month,
-// since text like '2026-11-31' still sorts after the last real day
+// one user's expenses dated in a month
 function inMonth(userId: Types.ObjectId, month: string) {
-  return { userId, date: { $gte: `${month}-01`, $lte: `${month}-31` } };
-}
-
-// count and sum of one month's expenses
-async function monthTotals(userId: Types.ObjectId, month: string) {
-  const [result] = await Expense.aggregate<{ count: number; total: number }>([
-    { $match: inMonth(userId, month) },
-    { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$amount' } } },
-  ]);
-  return { count: result?.count ?? 0, total: round2(result?.total ?? 0) };
-}
-
-// spending per category, biggest first, with each category's name
-function byCategory(userId: Types.ObjectId, month: string) {
-  return Expense.aggregate<{ categoryId: Types.ObjectId; name: string; total: number }>([
-    { $match: inMonth(userId, month) },
-    { $group: { _id: '$categoryId', total: { $sum: '$amount' } } },
-    { $sort: { total: -1 } },
-    // $lookup joins in the matching category document, like a JOIN in SQL
-    { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },
-    {
-      $project: {
-        _id: 0,
-        categoryId: '$_id',
-        name: { $ifNull: [{ $first: '$category.name' }, 'Uncategorized'] }, // if the category no longer exists
-        total: { $round: ['$total', 2] },
-      },
-    },
-  ]);
+  return { userId, date: monthRange(month) };
 }
 
 // '2026-10-19' → 19, read from characters 8–9 of the date text
@@ -67,9 +39,9 @@ export async function getDashboard(req: Request, res: Response) {
 
   // six independent queries, run at the same time
   const [totals, previousTotals, categories, weeks, recent, budget] = await Promise.all([
-    monthTotals(userId, month),
-    monthTotals(userId, previous),
-    byCategory(userId, month),
+    sumExpenses(inMonth(userId, month)),
+    sumExpenses(inMonth(userId, previous)),
+    spendingByCategory(inMonth(userId, month)),
     weekly(userId, month),
     Expense.find(inMonth(userId, month)).sort({ date: -1, createdAt: -1 }).limit(5),
     Budget.findOne({ userId, month }),
