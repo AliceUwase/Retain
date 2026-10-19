@@ -1,59 +1,46 @@
-import { mockUsers } from '../data/mockData';
-import type { PublicUser, User } from '../types';
-import { delay, loadList, newId, now, saveList } from './storage';
+import type { PublicUser } from '../types';
+import { api } from './apiClient';
+import { clearSession, getSavedUser, saveSession, updateSavedUser } from './session';
 
-const KEY = 'users';
-const SESSION_KEY = 'retain:session'; // the logged-in user
-
-function load(): User[] {
-  return loadList(KEY, mockUsers);
+interface AuthResponse {
+  user: PublicUser;
+  token: string;
 }
 
-function toPublic({ id, name, email, role, createdAt }: User): PublicUser {
-  return { id, name, email, role, createdAt };
-}
-
-// remember me: localStorage survives closing the browser, sessionStorage doesn't
-function saveSession(user: PublicUser, remember: boolean): void {
-  signOut();
-  (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, JSON.stringify(user));
-}
-
-// admin dashboard only
-export async function getUsers(): Promise<PublicUser[]> {
-  await delay();
-  return load().map(toPublic);
-}
-
-// whoever is logged in, or null
-export function getCurrentUser(): PublicUser | null {
-  const saved = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY);
-  return saved ? (JSON.parse(saved) as PublicUser) : null;
-}
+export const getCurrentUser = getSavedUser;
 
 export async function signIn(email: string, password: string, remember: boolean): Promise<PublicUser> {
-  await delay();
-  const user = load().find((u) => u.email === email.trim().toLowerCase() && u.password === password);
-  if (!user) throw new Error('Incorrect email or password.');
-
-  saveSession(toPublic(user), remember);
-  return toPublic(user);
+  const { user, token } = await api<AuthResponse>('/api/auth/login', {
+    method: 'POST',
+    body: { email, password, remember },
+  });
+  saveSession(token, user, remember);
+  return user;
 }
 
-// new accounts are normal users, logged in straight away
+// new accounts are normal users, logged in straight away (and remembered)
 export async function signUp(name: string, email: string, password: string): Promise<PublicUser> {
-  await delay();
-  const users = load();
-  const cleanEmail = email.trim().toLowerCase();
-  if (users.some((u) => u.email === cleanEmail)) throw new Error('An account with this email already exists.');
-
-  const user: User = { id: newId('u'), name: name.trim(), email: cleanEmail, password, role: 'user', createdAt: now() };
-  saveList(KEY, [...users, user]);
-  saveSession(toPublic(user), true);
-  return toPublic(user);
+  const { user, token } = await api<AuthResponse>('/api/auth/register', {
+    method: 'POST',
+    body: { name, email, password },
+  });
+  saveSession(token, user, true);
+  return user;
 }
 
+// asks the API who the saved token belongs to; fails with 401 if the token has expired
+export async function fetchCurrentUser(): Promise<PublicUser> {
+  const { user } = await api<{ user: PublicUser }>('/api/auth/me');
+  updateSavedUser(user);
+  return user;
+}
+
+// admin overview only
+export function getUsers(): Promise<PublicUser[]> {
+  return api<PublicUser[]>('/api/admin/users');
+}
+
+// the server keeps no session, so logging out means forgetting the token 
 export function signOut(): void {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
+  clearSession();
 }
