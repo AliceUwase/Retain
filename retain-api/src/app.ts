@@ -22,6 +22,11 @@ app.use(helmet()); // adds safe HTTP headers and removes the "X-Powered-By: Expr
 app.use(cors({ origin: env.clientUrls }));
 app.use(express.json({ limit: '10kb' })); // turns JSON request bodies into req.body
 
+// the bare URL, so someone opening the API in a browser sees what it is instead of a 404
+app.get('/', (_req, res) => {
+  res.json({ name: 'Retain API', health: '/api/health', frontend: env.clientUrls[0] });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', database: isDBConnected() ? 'connected' : 'disconnected' });
 });
