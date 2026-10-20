@@ -6,6 +6,8 @@ Retain is a personal expense tracker. A user can log what they spend, set a mont
 | --- | --- |
 | **Live app** | https://retain-umber.vercel.app |
 | **API** | https://retain-api-bdg7.onrender.com |
+| **Demo Video** | https://youtu.be/o9E8X7xEsis |
+
 
 **Demo accounts**
 
